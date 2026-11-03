@@ -83,12 +83,12 @@ export default function Pay() {
   return (
     <>
       <Card title={`Invoice #${params.invoiceId}`}>
-        <p className="text-3xl font-semibold">{tusd(data.amount)} tUSD</p>
+        <p className="text-5xl font-semibold tracking-tight">{tusd(data.amount)} <span className="text-2xl">tUSD</span></p>
         <Row label="Merchant">{short(data.merchant)}</Row>
         <Row label="Status">{paid ? `Paid by ${short(data.payer)}` : expired ? "Expired" : "Awaiting payment"}</Row>
         <Row label="Expires">{new Date(data.expiry * 1000).toLocaleString()}</Row>
         {link && (
-          <div className="flex justify-center rounded-xl bg-white p-3">
+          <div className="flex justify-center rounded-2xl bg-white p-4">
             <QRCodeSVG value={link} size={160} />
           </div>
         )}
@@ -118,7 +118,7 @@ export default function Pay() {
                 <button
                   disabled={running || !reserveOk || !LOCKBOX}
                   onClick={payFromBase}
-                  className="min-h-11 w-full rounded-xl border border-[var(--line)] px-4 font-medium disabled:opacity-50"
+                  className="min-h-12 w-full rounded-full border border-[var(--ink)]/25 bg-white px-5 font-semibold disabled:opacity-40"
                 >
                   {running ? "Working…" : "Pay from Base"}
                 </button>

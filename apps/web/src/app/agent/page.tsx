@@ -83,7 +83,7 @@ export default function Agent() {
               key={name}
               onClick={() => setRails((value) => value ^ bit)}
               aria-pressed={(rails & bit) !== 0}
-              className={`min-h-11 rounded-full border px-3 text-sm ${rails & bit ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--line)] text-[var(--muted)]"}`}
+              className={`min-h-11 rounded-full border px-3 text-sm ${rails & bit ? "border-[var(--ink)] bg-[var(--ink)] text-white" : "border-[var(--line)] bg-white text-[var(--muted)]"}`}
             >
               {name}
             </button>
@@ -129,7 +129,7 @@ export default function Agent() {
             />
           </>
         )}
-        {result && <pre className="overflow-x-auto rounded-lg bg-[var(--bg)] p-2 text-xs">{result}</pre>}
+        {result && <pre className="overflow-x-auto rounded-2xl bg-white p-3 text-xs">{result}</pre>}
       </Card>
 
       <Card title="Waiting for your approval" note="Agent payments over their limits wait here. Approving or rejecting is a direct transaction, so this wallet needs a little tPOT.">

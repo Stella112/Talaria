@@ -1,57 +1,96 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f7f4ec;
-  --surface: #fffdf8;
-  --ink: #1b1a26;
-  --muted: #68657a;
-  --line: #e2dccd;
-  --accent: #4b3fce;
+  --bg: #ffffff;
+  --surface: #faf4ee;
+  --surface-2: #f3e9df;
+  --ink: #24100a;
+  --muted: #6f5c53;
+  --line: #e8dcd0;
+  --accent: #24100a;
   --accent-ink: #ffffff;
-  --gold: #b07d12;
-  --warn-bg: #fdf1d3;
-  --warn-ink: #6f4d05;
+  --orange: #fb7a4b;
+  --sky: #c3dbe4;
+  --gold: #fb7a4b;
+  --warn-bg: #fdeadf;
+  --warn-ink: #7d3314;
   --bad: #b3261e;
-  --good: #1a7a48;
+  --good: #17693f;
+  --good-bg: #dcefe3;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #12111b;
-    --surface: #1c1b28;
-    --ink: #f1eee6;
-    --muted: #a5a2b6;
-    --line: #322f42;
-    --accent: #8f85f5;
-    --accent-ink: #12111b;
-    --gold: #e0b34a;
-    --warn-bg: #33290f;
-    --warn-ink: #f0d48a;
-    --bad: #f28b82;
-    --good: #6fd19c;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--bg);
   color: var(--ink);
-  font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.025em;
 }
 
 input,
 select {
   width: 100%;
-  min-height: 44px;
-  padding: 0 12px;
+  min-height: 48px;
+  padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--bg);
+  border-radius: 14px;
+  background: #ffffff;
   color: var(--ink);
   font-size: 16px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgb(36 16 10 / 0.08);
 }
 
 label {
   display: block;
   font-size: 14px;
+  font-weight: 500;
   color: var(--muted);
+}
+
+:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.pulse-dot {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .pulse-dot {
+    animation: none;
+  }
 }

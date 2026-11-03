@@ -7,7 +7,7 @@ import { useConnect, useConnection, useDisconnect } from "wagmi";
 import { explain, short } from "@/lib/talaria";
 
 const NAV = [
-  ["/", "Status"],
+  ["/", "Overview"],
   ["/wallet", "Wallet"],
   ["/merchant", "Merchant"],
   ["/streams", "Streams"],
@@ -17,70 +17,114 @@ const NAV = [
 
 export function Connect() {
   const { address } = useConnection();
-  const { connect, connectors } = useConnect();
+  const { connect, connectors, error } = useConnect();
   const { disconnect } = useDisconnect();
   if (address) {
     return (
-      <button onClick={() => disconnect()} className="min-h-11 rounded-full border border-[var(--line)] px-4 text-sm" title="Disconnect">
+      <button onClick={() => disconnect()} className="min-h-11 shrink-0 rounded-full border border-[var(--line)] bg-white px-4 text-sm font-medium" title="Disconnect">
         {short(address)}
       </button>
     );
   }
   return (
-    <button onClick={() => connectors[0] && connect({ connector: connectors[0] })} className="min-h-11 rounded-full bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-ink)]">
+    <button
+      onClick={() => connectors[0] && connect({ connector: connectors[0] })}
+      title={error?.message}
+      className="min-h-11 shrink-0 rounded-full bg-[var(--ink)] px-5 text-sm font-semibold text-white transition-opacity hover:opacity-85"
+    >
       Connect wallet
     </button>
   );
 }
 
+export function Pill({ children, tone = "line" }: { children: ReactNode; tone?: "line" | "good" | "orange" }) {
+  const tones = {
+    line: "border border-[var(--ink)]/25 text-[var(--ink)]",
+    good: "bg-[var(--good-bg)] text-[var(--good)]",
+    orange: "bg-[var(--warn-bg)] text-[var(--warn-ink)]",
+  };
+  return <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${tones[tone]}`}>{children}</span>;
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
+  const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
   return (
-    <div className="mx-auto min-h-screen w-full max-w-2xl px-4 pb-16">
-      <header className="flex items-center justify-between gap-3 py-4">
-        <Link href="/" className="text-xl font-semibold tracking-tight">
-          Talaria <span className="text-[var(--gold)]">⟡</span>
-        </Link>
-        <Connect />
-      </header>
-      <p className="mb-3 rounded-lg bg-[var(--warn-bg)] px-3 py-2 text-xs text-[var(--warn-ink)]">
-        Testnet only. tUSD and mUSDC are test tokens with no value. The bridge uses one trusted relayer.
+    <div className="min-h-screen">
+      <p className="bg-[var(--ink)] px-4 py-2 text-center text-xs font-medium text-white">
+        Testnet only. tUSD and mUSDC have no value. The bridge uses one trusted relayer.
       </p>
-      <nav className="-mx-4 mb-5 flex gap-1 overflow-x-auto px-4">
-        {NAV.map(([href, label]) => (
-          <Link key={href} href={href} className={`shrink-0 rounded-full px-3 py-2 text-sm ${path === href ? "bg-[var(--ink)] text-[var(--bg)]" : "text-[var(--muted)]"}`}>
-            {label}
+      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white/90 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-6">
+          <Link href="/" className="flex shrink-0 items-center gap-2 text-xl font-semibold tracking-tight">
+            <span aria-hidden className="h-6 w-3.5 rounded-full bg-[var(--orange)]" />
+            Talaria
           </Link>
-        ))}
-      </nav>
-      <main className="space-y-4">{children}</main>
+          <nav className="hidden items-center gap-1 md:flex">
+            {NAV.map(([href, label]) => (
+              <Link key={href} href={href} className={`rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${active(href) ? "bg-[var(--surface-2)]" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}>
+                {label}
+              </Link>
+            ))}
+          </nav>
+          <Connect />
+        </div>
+        <nav className="no-scrollbar flex gap-1 overflow-x-auto px-4 pb-3 md:hidden">
+          {NAV.map(([href, label]) => (
+            <Link key={href} href={href} className={`flex min-h-10 shrink-0 items-center rounded-full px-3.5 text-sm font-medium ${active(href) ? "bg-[var(--surface-2)]" : "text-[var(--muted)]"}`}>
+              {label}
+            </Link>
+          ))}
+        </nav>
+      </header>
+      <main>{children}</main>
+      <footer className="mt-20 border-t border-[var(--line)]">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-[var(--muted)] md:flex-row md:justify-between md:px-6">
+          <span>Talaria. Open source under MIT.</span>
+          <a className="underline underline-offset-4" href="https://github.com/Stella112/Talaria" target="_blank" rel="noreferrer">
+            Code and on-chain evidence on GitHub
+          </a>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+/** Heading and card layout for the app pages. */
+export function Page({ eyebrow, title, intro, narrow, children }: { eyebrow: string; title: string; intro: string; narrow?: boolean; children: ReactNode }) {
+  return (
+    <div className={`mx-auto px-4 pt-10 md:px-6 md:pt-16 ${narrow ? "max-w-xl" : "max-w-6xl"}`}>
+      <Pill>{eyebrow}</Pill>
+      <h1 className="mt-4 max-w-3xl text-4xl font-semibold md:text-6xl">{title}</h1>
+      <p className="mt-4 mb-8 max-w-2xl text-lg text-[var(--muted)] md:mb-12">{intro}</p>
+      <div className={narrow ? "" : "gap-5 md:columns-2"}>{children}</div>
     </div>
   );
 }
 
 export function Card({ title, children, note }: { title: string; children: ReactNode; note?: string }) {
   return (
-    <section className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
-      <h2 className="font-medium">{title}</h2>
-      {note && <p className="mt-1 text-sm text-[var(--muted)]">{note}</p>}
-      <div className="mt-3 space-y-3">{children}</div>
+    <section className="mb-5 break-inside-avoid rounded-3xl bg-[var(--surface)] p-5 md:p-7">
+      <h2 className="text-xl font-semibold">{title}</h2>
+      {note && <p className="mt-1.5 text-sm leading-relaxed text-[var(--muted)]">{note}</p>}
+      <div className="mt-4 space-y-3">{children}</div>
     </section>
   );
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <p className="rounded-lg border border-dashed border-[var(--line)] px-3 py-4 text-center text-sm text-[var(--muted)]">{children}</p>;
+  return <p className="mb-5 rounded-2xl border border-dashed border-[var(--line)] bg-white px-4 py-6 text-center text-sm text-[var(--muted)]">{children}</p>;
 }
 
 export function Notice({ children }: { children: ReactNode }) {
-  return <p className="rounded-lg bg-[var(--warn-bg)] px-3 py-2 text-sm text-[var(--warn-ink)]">{children}</p>;
+  return <p className="mb-5 rounded-2xl bg-[var(--warn-bg)] px-4 py-3 text-sm leading-relaxed text-[var(--warn-ink)]">{children}</p>;
 }
 
 export function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-4 text-sm">
       <span className="text-[var(--muted)]">{label}</span>
-      <span className="min-w-0 text-right break-all">{children}</span>
+      <span className="min-w-0 text-right font-medium break-all">{children}</span>
     </div>
   );
 }
@@ -90,7 +134,7 @@ export function Field(props: { label: string } & React.InputHTMLAttributes<HTMLI
   return (
     <label>
       {label}
-      <input className="mt-1" {...input} />
+      <input className="mt-1.5" {...input} />
     </label>
   );
 }
@@ -100,11 +144,11 @@ export function TxHash({ hash, chain = "portaldot" }: { hash: string; chain?: "p
   const [copied, setCopied] = useState(false);
   const href = chain === "base" ? `https://sepolia.basescan.org/tx/${hash}` : "https://node-console.portaldot.dev/";
   return (
-    <div className="rounded-lg bg-[var(--bg)] p-2 text-xs">
+    <div className="rounded-2xl bg-white p-3 text-xs">
       <code className="block break-all">{hash}</code>
-      <div className="mt-1 flex gap-4">
+      <div className="mt-1 flex gap-4 font-medium">
         <button
-          className="min-h-8 underline"
+          className="min-h-8 underline underline-offset-2"
           onClick={async () => {
             await navigator.clipboard.writeText(hash);
             setCopied(true);
@@ -112,7 +156,7 @@ export function TxHash({ hash, chain = "portaldot" }: { hash: string; chain?: "p
         >
           {copied ? "Copied" : "Copy"}
         </button>
-        <a className="min-h-8 leading-8 underline" href={href} target="_blank" rel="noreferrer">
+        <a className="min-h-8 leading-8 underline underline-offset-2" href={href} target="_blank" rel="noreferrer">
           {chain === "base" ? "BaseScan" : "Node console"}
         </a>
       </div>
@@ -141,7 +185,7 @@ export function ActionButton({
     <div className="space-y-2">
       <button
         disabled={busy || disabled}
-        className={`min-h-11 w-full rounded-xl px-4 font-medium disabled:opacity-50 ${secondary ? "border border-[var(--line)]" : "bg-[var(--accent)] text-[var(--accent-ink)]"}`}
+        className={`min-h-12 w-full rounded-full px-5 font-semibold transition-opacity hover:opacity-85 disabled:opacity-40 ${secondary ? "border border-[var(--ink)]/25 bg-white" : "bg-[var(--ink)] text-white"}`}
         onClick={async () => {
           setBusy(true);
           setError(undefined);
@@ -167,6 +211,16 @@ export function ActionButton({
 
 export function NeedsWallet({ children }: { children: ReactNode }) {
   const { address } = useConnection();
-  if (!address) return <Empty>Connect a wallet to use this.</Empty>;
+  if (!address) {
+    return (
+      <section className="flex flex-col items-start gap-4 rounded-3xl bg-[var(--surface)] p-6 md:p-8">
+        <div>
+          <h2 className="text-xl font-semibold">Connect a wallet to continue</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">Your key stays in your wallet. Talaria only asks for signatures.</p>
+        </div>
+        <Connect />
+      </section>
+    );
+  }
   return <>{children}</>;
 }

@@ -40,7 +40,7 @@ export default function Remit() {
           }}
         />
         {claimLink && (
-          <div className="rounded-lg bg-[var(--bg)] p-2 text-xs">
+          <div className="rounded-2xl bg-white p-3 text-xs">
             <p className="mb-1 font-medium">Anyone with this link can claim. Share it carefully.</p>
             <code className="break-all">{claimLink}</code>
           </div>
