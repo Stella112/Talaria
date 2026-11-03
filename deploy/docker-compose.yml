@@ -1,0 +1,54 @@
+# Talaria services, kept apart from anything else on the host: own network, capped memory and CPU,
+# no extra privileges. Run from this folder: docker compose --env-file .env.talaria up -d --build
+name: talaria
+
+x-service: &service
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+  image: talaria-services
+  restart: unless-stopped
+  env_file: .env.talaria
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  logging:
+    driver: json-file
+    options: { max-size: 10m, max-file: "3" }
+
+services:
+  relayer:
+    <<: *service
+    working_dir: /app/services/relayer
+    command: ["../../node_modules/.pnpm/node_modules/.bin/tsx", "src/index.ts"]
+    environment:
+      RELAYER_PORT: "8787"
+    ports: ["8900:8787"]
+    volumes: ["relayer-data:/app/services/relayer/data"]
+    mem_limit: 300m
+    cpus: 0.5
+
+  agent:
+    <<: *service
+    working_dir: /app/services/agent
+    command: ["../../node_modules/.pnpm/node_modules/.bin/tsx", "src/index.ts"]
+    environment:
+      AGENT_PORT: "8789"
+      RELAYER_URL: http://relayer:8787
+    ports: ["8901:8789"]
+    depends_on: [relayer]
+    mem_limit: 250m
+    cpus: 0.25
+
+  demo-api:
+    <<: *service
+    working_dir: /app/apps/demo-api
+    command: ["../../node_modules/.pnpm/node_modules/.bin/tsx", "src/index.ts"]
+    environment:
+      API_PORT: "8788"
+      RELAYER_URL: http://relayer:8787
+    ports: ["8902:8788"]
+    mem_limit: 150m
+    cpus: 0.25
+
+volumes:
+  relayer-data:
