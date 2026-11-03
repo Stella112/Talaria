@@ -1,0 +1,10 @@
+{
+  "name": "@talaria-pay/relayer",
+  "private": true,
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "test": "vitest run"
+  }
+}

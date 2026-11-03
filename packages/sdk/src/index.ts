@@ -1,1 +1,7 @@
-export * as utils from "./utils/address.js";
+export * as utils from "./utils/address";
+export * from "./chain";
+export * from "./client";
+export * from "./fetch";
+export * from "./generated";
+export * from "./intents";
+export * from "./paywall";
