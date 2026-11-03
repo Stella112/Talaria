@@ -78,7 +78,10 @@ describe("LOCAL trust-priced settlement, end to end", () => {
     const app = buildServer(chain, store, { db, trust, protect: settlement });
     const relayerUrl = await app.listen({ port: 0, host: "127.0.0.1" });
     const addresses = { token: ctx.token.address, core: ctx.core.address, protect: protect.address, bridgeOut: bridgeOut.address };
-    const sdkFor = (account: any, extra = {}) => createTalaria({ account, publicClient, relayerUrl, addresses, ...extra });
+    // Earlier test files move this chain's clock ahead of the wall clock the SDK reads, so lifetimes allow for the gap.
+    const clockGap = Number(await now()) - Math.floor(Date.now() / 1000);
+    const lifetime = clockGap + 1800;
+    const sdkFor = (account: any) => createTalaria({ account, publicClient, relayerUrl, addresses, intentTtl: lifetime });
     const buyerSdk = sdkFor(buyer);
     const agentSdk = sdkFor(agent);
 
@@ -96,7 +99,7 @@ describe("LOCAL trust-priced settlement, end to end", () => {
       expect((await buyerSdk.getTrust(coffee.address)).tier).to.equal("trusted");
 
       // 1-2. The agent buys from New Shop under a mandate, and the funds are held.
-      const newShopMandate = await buyerSdk.createMandate({ agent: agent.address, payees: [newShop.address], maxAmount: "10" });
+      const newShopMandate = await buyerSdk.createMandate({ agent: agent.address, payees: [newShop.address], maxAmount: "10", expiresIn: lifetime });
       const first = await agentSdk.payWithMandate(newShopMandate, { payee: newShop.address, amount: "2" });
       const paymentId = BigInt(first.paymentId!);
       const held = await buyerSdk.getPayment(paymentId);
@@ -106,10 +109,10 @@ describe("LOCAL trust-priced settlement, end to end", () => {
 
       // An untrusted agent cannot exceed its low cap, even though the mandate allows it.
       let capped = "";
-      await agentSdk.payWithMandate(await buyerSdk.createMandate({ agent: agent.address, payees: [newShop.address], maxAmount: "10" }), { payee: newShop.address, amount: "6" }).catch((error: Error) => {
+      await agentSdk.payWithMandate(await buyerSdk.createMandate({ agent: agent.address, payees: [newShop.address], maxAmount: "10", expiresIn: lifetime }), { payee: newShop.address, amount: "6" }).catch((error: Error) => {
         capped = error.message;
       });
-      expect(capped).to.include("Relayer 400");
+      expect(capped).to.include("OverAgentCap");
 
       // 3. The buyer disputes gaslessly, and the arbiter refunds in full.
       await buyerSdk.dispute(paymentId);
@@ -132,7 +135,7 @@ describe("LOCAL trust-priced settlement, end to end", () => {
       expect(written[0]).to.include({ agentId: NEW_SHOP, value: 0n, tag: "refunded" });
 
       // 6. The agent buys from Trusted Coffee: instant settlement and positive feedback.
-      const coffeeMandate = await buyerSdk.createMandate({ agent: agent.address, payees: [coffee.address], maxAmount: "5" });
+      const coffeeMandate = await buyerSdk.createMandate({ agent: agent.address, payees: [coffee.address], maxAmount: "5", expiresIn: lifetime });
       const second = await agentSdk.payWithMandate(coffeeMandate, { payee: coffee.address, amount: "3" });
       expect((await buyerSdk.getPayment(BigInt(second.paymentId!))).status).to.equal("released");
       expect(await buyerSdk.getBalance(coffee.address)).to.equal(TUSD(3));
