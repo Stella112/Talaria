@@ -16,7 +16,7 @@ pnpm probe
 
 ## Credits & Dependencies
 
-Listed as they are added: viem, @polkadot/api, @polkadot/util-crypto, Hardhat, dotenv, tsx, Vitest.
+Listed as they are added: viem, @polkadot/api, @polkadot/util-crypto, OpenZeppelin Contracts, Hardhat, Fastify, zod, dotenv, tsx, Vitest.
 
 ## License
 

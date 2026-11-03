@@ -10,3 +10,4 @@ dist/
 *.sqlite
 *.log
 CLAUDE.md
+services/*/data/
