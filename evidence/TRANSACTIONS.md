@@ -12,3 +12,4 @@
 | bridge | creditFromBridge | `0xb0d9b610ecdb280b356c9be2c9919b4770f470b662ed9d0907297fa8be8e9bf1` | 306063 | success | 3.8666105897508669 tPOT |
 | setup | createInvoice | `0xf96e22b24511a1ccb8dc18a6808ab644b38c6bd6b3ce8439d8ec43fa01b84892` | 306065 | success | 7.70501034577650652 tPOT |
 | checkout | payInvoice (gasless intent) | `0x7fe8f26f10f5ad7f2e9a8a06348eef6ba26a0515697a778dd2e15059e45000ab` | 306067 | success | 15.41381374277931452 tPOT, paid by relayer |
+| deploy (Base Sepolia) | TalariaLockboxV2 | `0xc55ec5fe5bc91ed22bbf528f1bb34e14fd1849713a0dd5a9241d22fdb419750d` | 54091122 | success | test ETH |

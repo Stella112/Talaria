@@ -18,5 +18,15 @@
     "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
     "timestampUTC": "2026-11-03T12:29:58.322Z",
     "gitCommit": "b8b69686c31f91f7d4b87ffabfc7beef2f220d03"
+  },
+  {
+    "name": "TalariaLockboxV2",
+    "address": "0xc8675f5a54bdfd78d6ffbed8551393c8e462b1bd",
+    "deployTxHash": "0xc55ec5fe5bc91ed22bbf528f1bb34e14fd1849713a0dd5a9241d22fdb419750d",
+    "blockNumber": "54091122",
+    "runtimeBytecodeBytes": 1858,
+    "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "timestampUTC": "2026-11-03T21:08:14.806Z",
+    "gitCommit": "47eb4db8df9405a1ec3a9725dd19ce0e6ca7e9c6"
   }
 ]

@@ -20,7 +20,8 @@ export const CORE_DEPLOY_BLOCK = 305483n;
 export const client = portaldotClient(typeof window === "undefined" ? undefined : `${window.location.origin}/api/rpc`);
 /** Read-only SDK: needs no wallet. */
 export const reader = createTalaria({ publicClient: client });
-export const LOCKBOX = baseSepoliaDeployments.TalariaLockbox;
+// New locks go to V2, the lockbox the relayer watches.
+export const LOCKBOX = baseSepoliaDeployments.TalariaLockboxV2 ?? baseSepoliaDeployments.TalariaLockbox;
 export const MOCK_USDC = baseSepoliaDeployments.MockUSDC;
 
 /** Lets the SDK sign with a browser wallet. The key stays in the wallet. */
