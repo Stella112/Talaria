@@ -19,7 +19,7 @@ services:
   relayer:
     <<: *service
     working_dir: /app/services/relayer
-    command: ["../../node_modules/.pnpm/node_modules/.bin/tsx", "src/index.ts"]
+    command: ["node_modules/.bin/tsx", "src/index.ts"]
     environment:
       RELAYER_PORT: "8787"
     ports: ["8900:8787"]
@@ -30,7 +30,7 @@ services:
   agent:
     <<: *service
     working_dir: /app/services/agent
-    command: ["../../node_modules/.pnpm/node_modules/.bin/tsx", "src/index.ts"]
+    command: ["node_modules/.bin/tsx", "src/index.ts"]
     environment:
       AGENT_PORT: "8789"
       RELAYER_URL: http://relayer:8787
@@ -42,7 +42,7 @@ services:
   demo-api:
     <<: *service
     working_dir: /app/apps/demo-api
-    command: ["../../node_modules/.pnpm/node_modules/.bin/tsx", "src/index.ts"]
+    command: ["node_modules/.bin/tsx", "src/index.ts"]
     environment:
       API_PORT: "8788"
       RELAYER_URL: http://relayer:8787
