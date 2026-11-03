@@ -1,7 +1,9 @@
 import {
+  encodeAbiParameters,
   encodeFunctionData,
   keccak256,
   parseEventLogs,
+  parseSignature,
   toHex,
   type Address,
   type Hex,
@@ -177,7 +179,6 @@ export class Talaria {
       primaryType: "Permit",
       message: { owner: this.account.address, spender: this.addresses.core, value, nonce: await read<bigint>("nonces", [this.account.address]), deadline },
     });
-    const { parseSignature } = await import("viem");
     const { r, s, v } = parseSignature(signature);
     const args = [this.account.address, value, deadline, Number(v), r, s] as const;
     if (this.config.relayerUrl) return this.post("/deposits", { from: args[0], amount: value, deadline, v: args[3], r, s });
@@ -307,6 +308,19 @@ export class Talaria {
   claimRemit(id: bigint): Promise<Hex> {
     this.rail("remit");
     return this.intent({ rail: Rail.claimRemit, ref: toRef(id) });
+  }
+
+  /** Claims a code remit for `receiver`. The code signs the receiver, so it cannot be redirected. Direct transaction. */
+  async claimWithCode(id: bigint, code: Hex, receiver: Address): Promise<Hex> {
+    const address = this.rail("remit");
+    const hash = keccak256(
+      encodeAbiParameters(
+        [{ type: "uint256" }, { type: "address" }, { type: "uint256" }, { type: "address" }],
+        [BigInt(await this.client.getChainId()), address, id, receiver],
+      ),
+    );
+    const { r, s, v } = parseSignature(await privateKeyToAccount(code).sign({ hash }));
+    return this.direct(address, encodeFunctionData({ abi: TalariaRemitAbi, functionName: "claimWithCode", args: [id, receiver, Number(v), r, s] }));
   }
 
   // Session keys

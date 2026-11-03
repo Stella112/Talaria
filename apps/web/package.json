@@ -1,0 +1,29 @@
+{
+  "name": "@talaria-pay/web",
+  "private": true,
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.4",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "postcss": "^8.5.32",
+    "tailwindcss": "^4.3.4",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@talaria-pay/sdk": "workspace:*",
+    "@tanstack/react-query": "^5.105.3",
+    "next": "^16.4.4",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "viem": "^2.57.16",
+    "wagmi": "^3.7.11"
+  }
+}
