@@ -26,3 +26,5 @@ Balances at 2026-11-03T10:37Z: native wallet 1000 tPOT free, EVM deployer 0 tPOT
 
 ## Phase 3: Deploy and live flows
 - TalariaCore live at `0x69d4105479e25503f296797b91901ab558c830ac`, 8539 bytes, 683.89 tPOT.
+- MockUSDC and TalariaLockbox live on Base Sepolia (`deployments/base-sepolia.json`).
+- Live end-to-end: lock on Base Sepolia, relayer credit on V3, gasless invoice payment by a payer holding 0 tPOT. Hashes in `evidence/TRANSACTIONS.md`. The relayer ran in-process using the real relayer code, with the deployer key. The payer key was one-time and not stored, so its remaining 5 tUSD balance is unreachable.
