@@ -1,0 +1,21 @@
+{
+  "name": "@talaria-pay/demo-api",
+  "private": true,
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@talaria-pay/sdk": "workspace:*",
+    "dotenv": "^18.0.9",
+    "fastify": "^5.12.8",
+    "tsx": "^4.23.15",
+    "viem": "^2.57.16",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}
