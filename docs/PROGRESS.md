@@ -21,3 +21,5 @@ Balances at 2026-11-03T10:37Z: native wallet 1000 tPOT free, EVM deployer 0 tPOT
 ## Phase 1: First deployment
 - Native-to-EVM funding verified: 1 tPOT sent to the H160 + 0xEE account shows as 0.9 tPOT over EVM RPC (existential deposit withheld).
 - TalariaUSD rewritten without OpenZeppelin: 3018 runtime bytes, down from 4595.
+- TalariaUSD live at `0x44bc5dcfba3f36fb03623a27e553cdbb0b8877f0`. Deployment cost 252.69 tPOT, about 0.084 tPOT per byte.
+- Faucet, permit and transferFrom succeeded on-chain; see `evidence/TRANSACTIONS.md`. A new storage slot costs about 3.84 tPOT.
