@@ -5,7 +5,8 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
-    "probe": "tsx scripts/probe-chain.ts"
+    "probe": "tsx scripts/probe-chain.ts",
+    "estimate": "hardhat compile && tsx scripts/estimate-deploy.ts"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
@@ -14,5 +15,8 @@
     "hardhat": "^2.29.1",
     "tsx": "^4.23.15",
     "viem": "^2.57.16"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1"
   }
 }
