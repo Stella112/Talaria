@@ -20,6 +20,13 @@ contract TalariaProtect is TalariaRail {
         "TrustAttestation(address subject,uint256 agentId,uint8 score,uint32 feedbackCount,uint256 srcChainId,uint256 srcBlock,uint256 expiry,uint256 nonce)"
     );
 
+    bytes32 private constant MANDATE_TYPEHASH = keccak256(
+        "Mandate(address owner,address agent,bytes32 payeesHash,address token,uint256 minAmount,uint256 maxAmount,uint256 expiry,uint32 maxUses,bytes32 checkoutHash,uint256 nonce)"
+    );
+    bytes32 private constant PAYMENT_AUTH_TYPEHASH = keccak256("PaymentAuth(bytes32 mandateHash,address payee,uint256 amount,bytes32 ref,uint32 use)");
+    bytes32 private constant CHECKOUT_TYPEHASH = keccak256("Checkout(bytes32 orderId,uint256 amount,address token,address payee,uint256 expiry)");
+    uint32 private constant REVOKED = type(uint32).max;
+
     enum Status {
         None,
         Held,
@@ -55,7 +62,51 @@ contract TalariaProtect is TalariaRail {
         bytes32 s;
     }
 
-    /// @dev Index 0 is Trusted, 1 Established, 2 New.
+    /// @notice Signed by a user: what an agent key may buy. A non-zero checkoutHash makes it closed.
+    struct Mandate {
+        address owner;
+        address agent;
+        bytes32 payeesHash; // keccak256(abi.encode(address[] payees))
+        address token;
+        uint256 minAmount;
+        uint256 maxAmount;
+        uint256 expiry;
+        uint32 maxUses;
+        bytes32 checkoutHash;
+        uint256 nonce;
+    }
+
+    /// @notice Signed by a merchant for a closed mandate.
+    struct Checkout {
+        bytes32 orderId;
+        uint256 amount;
+        address token;
+        address payee;
+        uint256 expiry;
+    }
+
+    /// @notice An attestation with its signature. v = 0 means none was given.
+    struct SignedAttestation {
+        Attestation attestation;
+        Sig sig;
+    }
+
+    /// @notice One purchase under a mandate. Any relayer can submit it.
+    struct MandatePayment {
+        Mandate mandate;
+        Sig mandateSig;
+        address[] payees;
+        address payee;
+        uint256 amount;
+        bytes32 ref;
+        Sig agentSig; // agent signs PaymentAuth, which covers this use only
+        Checkout checkout;
+        Sig checkoutSig;
+        SignedAttestation merchantTrust;
+        SignedAttestation agentTrust;
+    }
+
+    /// @dev Set once by the deployer, because a setter costs about 28 tPOT in deposits.
     struct Tiers {
         uint32 holdTrusted;
         uint32 holdEstablished;
@@ -65,11 +116,11 @@ contract TalariaProtect is TalariaRail {
         uint48 capNew;
     }
 
-    address public immutable admin;
     address public immutable arbiter;
+    address public immutable token;
+    address public immutable attester;
 
     Tiers public tiers;
-    address public attester;
     uint64 public paymentCount;
     /// @dev Hold chosen by an attestation for the intent being executed, plus one. Zero when unset.
     uint32 private pendingHold;
@@ -77,39 +128,31 @@ contract TalariaProtect is TalariaRail {
     mapping(uint256 => Payment) public payments;
     /// @dev Bitmap of used attestation nonces, so sequential nonces share one storage slot.
     mapping(uint256 => uint256) private usedNonces;
+    /// @dev Uses per owner and mandate hash. REVOKED means the owner revoked it.
+    mapping(address => mapping(bytes32 => uint32)) public mandateUses;
 
     error NotHeld();
     error WindowOpen();
     error WindowClosed();
     error BadAttestation();
     error RefundTooLarge();
+    error BadMandate();
+    error OverAgentCap();
 
-    event TiersSet(Tiers tiers);
-    event AttesterSet(address attester);
     event PaymentOpened(uint256 indexed id, address indexed buyer, address indexed merchant, uint256 amount, bytes32 ref, uint32 releaseAt);
-    event TrustApplied(uint256 indexed paymentId, address indexed subject, uint256 agentId, uint8 score, uint32 feedbackCount, uint256 srcChainId, uint256 srcBlock);
+    event TrustApplied(uint256 indexed paymentId, address indexed subject, uint8 score, uint256 srcChainId, uint256 srcBlock);
     event PaymentReleased(uint256 indexed id, uint256 amount);
     event PaymentRefunded(uint256 indexed id, uint256 amount, uint256 totalRefunded);
     event PaymentDisputed(uint256 indexed id, address indexed buyer, bytes32 reasonHash);
     event PaymentResolved(uint256 indexed id, uint16 refundBps, uint256 refunded, uint256 paid);
+    event MandateUsed(uint256 indexed paymentId, bytes32 indexed mandateHash, bytes32 checkoutHash);
+    event MandateRevoked(address indexed owner, bytes32 indexed mandateHash);
 
-    constructor(ITalariaCoreRails core_, address admin_, address arbiter_, address attester_, Tiers memory tiers_) TalariaRail(core_) {
-        admin = admin_;
+    constructor(ITalariaCoreRails core_, address token_, address arbiter_, address attester_, Tiers memory tiers_) TalariaRail(core_) {
+        token = token_;
         arbiter = arbiter_;
         attester = attester_;
         tiers = tiers_;
-    }
-
-    function setTiers(Tiers calldata tiers_) external {
-        if (msg.sender != admin) revert NotAuthorized();
-        tiers = tiers_;
-        emit TiersSet(tiers_);
-    }
-
-    function setAttester(address attester_) external {
-        if (msg.sender != admin) revert NotAuthorized();
-        attester = attester_;
-        emit AttesterSet(attester_);
     }
 
     function domainSeparator() public view returns (bytes32) {
@@ -127,7 +170,54 @@ contract TalariaProtect is TalariaRail {
         pendingHold = 0;
         // No new payment means the intent was queued for its owner, which uses the New tier later.
         if (paymentCount != before) {
-            emit TrustApplied(paymentCount, attestation.subject, attestation.agentId, attestation.score, attestation.feedbackCount, attestation.srcChainId, attestation.srcBlock);
+            emit TrustApplied(paymentCount, attestation.subject, attestation.score, attestation.srcChainId, attestation.srcBlock);
+        }
+    }
+
+    /// @notice Pays under a user's mandate. The cap is the lower of the mandate's maximum and the
+    /// tier cap from the agent's own attested reputation.
+    function payWithMandate(MandatePayment calldata p) external returns (uint256 id) {
+        Mandate calldata m = p.mandate;
+        bytes32 mandateHash = keccak256(abi.encode(MANDATE_TYPEHASH, m));
+        uint32 used = mandateUses[m.owner][mandateHash];
+        if (
+            !_signedBy(mandateHash, p.mandateSig, m.owner) ||
+            m.token != token ||
+            block.timestamp > m.expiry ||
+            used == REVOKED ||
+            used >= m.maxUses ||
+            p.amount < m.minAmount ||
+            keccak256(abi.encode(p.payees)) != m.payeesHash ||
+            !_contains(p.payees, p.payee)
+        ) revert BadMandate();
+
+        bytes32 auth = keccak256(abi.encode(PAYMENT_AUTH_TYPEHASH, mandateHash, p.payee, p.amount, p.ref, used));
+        if (!_signedBy(auth, p.agentSig, m.agent)) revert BadMandate();
+
+        if (m.checkoutHash != bytes32(0)) {
+            Checkout calldata c = p.checkout;
+            bytes32 checkoutHash = keccak256(abi.encode(CHECKOUT_TYPEHASH, c));
+            if (checkoutHash != m.checkoutHash || !_signedBy(checkoutHash, p.checkoutSig, c.payee) || c.amount != p.amount || c.payee != p.payee || c.token != token || block.timestamp > c.expiry) {
+                revert BadMandate();
+            }
+        }
+
+        uint256 cap = _agentCap(p.agentTrust, m.agent);
+        if (m.maxAmount < cap) cap = m.maxAmount;
+        if (p.amount > cap) revert OverAgentCap();
+        mandateUses[m.owner][mandateHash] = used + 1;
+
+        SignedAttestation calldata trust = p.merchantTrust;
+        bool attested = trust.sig.v != 0;
+        if (attested) {
+            if (trust.attestation.subject != p.payee) revert BadAttestation();
+            _useAttestation(trust.attestation, trust.sig);
+        }
+        id = _open(m.owner, p.payee, p.amount, p.ref, attested ? _holdFor(trust.attestation.score, trust.attestation.feedbackCount) : tiers.holdNew);
+        emit MandateUsed(id, mandateHash, m.checkoutHash);
+        if (attested) {
+            Attestation calldata a = trust.attestation;
+            emit TrustApplied(id, a.subject, a.score, a.srcChainId, a.srcBlock);
         }
     }
 
@@ -166,13 +256,16 @@ contract TalariaProtect is TalariaRail {
         if (toMerchant != 0) core.railTransfer(RAIL, address(this), payment.merchant, toMerchant, bytes32(id), true);
     }
 
-    /// @dev Actions: 0 pay (payee = merchant), 1 dispute (ref = id), 2 refund (ref = id, payee = buyer).
+    /// @dev Actions: 0 pay (payee = merchant), 1 dispute (ref = id), 2 refund (ref = id, payee = buyer),
+    /// 3 revoke a mandate (ref = mandate hash).
     function onIntent(uint8 action, address owner, address, address payee, uint256 amount, bytes32 ref) external onlyCore {
         if (action == 0) {
             uint32 pending = pendingHold;
             _open(owner, payee, amount, ref, pending == 0 ? tiers.holdNew : pending - 1);
         } else if (action == 1) {
             _dispute(owner, uint256(ref), bytes32(0));
+        } else if (action == 3) {
+            _revokeMandate(owner, ref);
         } else {
             if (payments[uint256(ref)].buyer != payee) revert InvalidParams();
             _refund(owner, uint256(ref), amount);
@@ -217,15 +310,38 @@ contract TalariaProtect is TalariaRail {
         core.railTransfer(RAIL, status == Status.Held ? address(this) : merchant, payment.buyer, amount, bytes32(id), false);
     }
 
+    function _revokeMandate(address owner, bytes32 mandateHash) private {
+        mandateUses[owner][mandateHash] = REVOKED;
+        emit MandateRevoked(owner, mandateHash);
+    }
+
+    function _agentCap(SignedAttestation calldata trust, address agent) private returns (uint256) {
+        if (trust.sig.v == 0) return tiers.capNew;
+        if (trust.attestation.subject != agent) revert BadAttestation();
+        _useAttestation(trust.attestation, trust.sig);
+        uint8 tier = _tierOf(trust.attestation.score, trust.attestation.feedbackCount);
+        return tier == 0 ? tiers.capTrusted : tier == 1 ? tiers.capEstablished : tiers.capNew;
+    }
+
+    function _contains(address[] calldata list, address item) private pure returns (bool) {
+        for (uint256 i; i < list.length; ++i) {
+            if (list[i] == item) return true;
+        }
+        return false;
+    }
+
+    function _signedBy(bytes32 structHash, Sig calldata sig, address signer) private view returns (bool) {
+        address recovered = ecrecover(keccak256(abi.encodePacked(hex"1901", domainSeparator(), structHash)), sig.v, sig.r, sig.s);
+        return recovered != address(0) && recovered == signer;
+    }
+
     function _useAttestation(Attestation calldata a, Sig calldata sig) private {
         if (block.timestamp > a.expiry) revert BadAttestation();
         uint256 word = a.nonce >> 8;
         uint256 bit = 1 << (a.nonce & 0xff);
         if (usedNonces[word] & bit != 0) revert BadAttestation();
         usedNonces[word] |= bit;
-        bytes32 structHash = keccak256(abi.encode(ATTESTATION_TYPEHASH, a));
-        address recovered = ecrecover(keccak256(abi.encodePacked(hex"1901", domainSeparator(), structHash)), sig.v, sig.r, sig.s);
-        if (recovered == address(0) || recovered != attester) revert BadAttestation();
+        if (!_signedBy(keccak256(abi.encode(ATTESTATION_TYPEHASH, a)), sig, attester)) revert BadAttestation();
     }
 
     /// @dev Fewer than three feedbacks always counts as New, whatever the score.

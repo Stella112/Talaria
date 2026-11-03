@@ -8,9 +8,9 @@ import { rpc } from "./lib/rpc";
 
 loadEnv({ path: resolve(__dirname, "../../.env") });
 
-// Calibrated from our TalariaUSD deployment: 3018 bytes cost 252.69 tPOT in total (see evidence/).
-const TPOT_PER_BYTE = 252.69 / 3018;
-const TPOT_PER_CONTRACT = 0;
+// Fitted to our two real deployments: TalariaUSD (3018 bytes, 252.69 tPOT) and TalariaCore (8539 bytes, 683.89 tPOT).
+const TPOT_PER_BYTE = 0.0781;
+const TPOT_PER_CONTRACT = 17.0;
 
 const EVM_RPC = process.env.PORTALDOT_EVM_RPC || "https://test-evm-rpc-v3.portaldot.dev";
 const deployer = process.env.DEPLOYER_H160 as `0x${string}` | undefined;
@@ -18,7 +18,8 @@ const deployer = process.env.DEPLOYER_H160 as `0x${string}` | undefined;
 const TUSD = "0x44bc5dcfba3f36fb03623a27e553cdbb0b8877f0"; // already deployed; listed by priority below
 
 const CONTRACTS: { name: string; args?: () => unknown[] }[] = [
-  { name: "TalariaCore", args: () => [TUSD, deployer] },
+  { name: "TalariaProtect" },
+  { name: "TalariaBridgeOut" },
   { name: "TalariaChannels" },
   { name: "TalariaSubscriptions" },
   { name: "TalariaStreams" },
