@@ -1,0 +1,14 @@
+#!/bin/sh
+# Blocks commits whose staged additions look like a private key or a mnemonic.
+added=$(git diff --cached --no-color -U0 --diff-filter=ACMR | grep '^+' | grep -v '^+++')
+key='(PRIVATE_KEY|SECRET|MNEMONIC)[A-Z_]*[=:][[:space:]]*["'"'"']?(0x)?[0-9a-fA-F]{64}'
+phrase='(^\+|[=:"'"'"'][[:space:]]*)([a-z]{3,8} ){11,23}[a-z]{3,8}["'"'"']?[[:space:]]*$'
+if printf '%s\n' "$added" | grep -Eq "$key|$phrase"; then
+  echo "pre-commit: possible private key or mnemonic in staged changes. Commit blocked." >&2
+  exit 1
+fi
+if git diff --cached --name-only --diff-filter=ACMR | grep -Eq '(^|/)\.env(\.[^/]*)?$' &&
+   git diff --cached --name-only --diff-filter=ACMR | grep -Ev '(^|/)\.env\.example$' | grep -Eq '(^|/)\.env'; then
+  echo "pre-commit: .env file staged. Commit blocked." >&2
+  exit 1
+fi
