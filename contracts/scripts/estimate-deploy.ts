@@ -15,7 +15,15 @@ const TPOT_PER_CONTRACT = 0;
 const EVM_RPC = process.env.PORTALDOT_EVM_RPC || "https://test-evm-rpc-v3.portaldot.dev";
 const deployer = process.env.DEPLOYER_H160 as `0x${string}` | undefined;
 
-const CONTRACTS: { name: string; args: () => unknown[] }[] = [{ name: "TalariaUSD", args: () => [deployer] }];
+const TUSD = "0x44bc5dcfba3f36fb03623a27e553cdbb0b8877f0"; // already deployed; listed by priority below
+
+const CONTRACTS: { name: string; args?: () => unknown[] }[] = [
+  { name: "TalariaCore", args: () => [TUSD, deployer] },
+  { name: "TalariaChannels" },
+  { name: "TalariaSubscriptions" },
+  { name: "TalariaStreams" },
+  { name: "TalariaRemit" },
+];
 
 async function main() {
   const balance = deployer ? await rpc(EVM_RPC, "eth_getBalance", [deployer, "latest"]) : null;
@@ -34,7 +42,7 @@ async function main() {
     total += estimate;
     console.log(`\n${name}\n  runtime bytes  ${bytes}\n  deposit est.   ${estimate.toFixed(2)} tPOT`);
 
-    if (deployer && gasPrice.ok) {
+    if (deployer && gasPrice.ok && args) {
       const data = encodeDeployData({ abi: artifact.abi, bytecode: artifact.bytecode, args: args() as never });
       const gas = await rpc(EVM_RPC, "eth_estimateGas", [{ from: deployer, data }]);
       if (gas.ok) {

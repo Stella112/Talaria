@@ -298,3 +298,14 @@ describe("TalariaCore bridge credit", () => {
     expect(await core.read.balances([alice.account.address])).to.equal(500_000_000n);
   });
 });
+
+describe("TalariaCore reentrancy", () => {
+  it("blocks a rail that re-enters Core during an intent", async () => {
+    const ctx = await deployCore();
+    const bad = await hre.viem.deployContract("ReentrantRail", [ctx.core.address]);
+    await ctx.core.write.setModule([7, bad.address]);
+    const asRelayer = await ctx.as("TalariaCore", ctx.core.address, ctx.relayer);
+    const a = ctx.alice.account.address;
+    await revertsWith(asRelayer.write.execute(await signIntent(ctx.core, ctx.alice, { rail: 7, owner: a, signer: a, payee: a, amount: 1n, nonce: 0n })), "ReentrancyGuardReentrantCall");
+  });
+});
