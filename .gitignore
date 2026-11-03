@@ -9,3 +9,4 @@ dist/
 .next/
 *.sqlite
 *.log
+CLAUDE.md
