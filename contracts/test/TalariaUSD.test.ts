@@ -36,12 +36,25 @@ describe("TalariaUSD", () => {
     await revertsWith(asAlice.write.mint([owner.account.address, 1n]), "OwnableUnauthorizedAccount");
   });
 
-  it("requires two steps to transfer ownership", async () => {
+  it("lets only the owner transfer ownership", async () => {
     const { token, asAlice, owner, alice } = await deploy();
+    await revertsWith(asAlice.write.transferOwnership([alice.account.address]), "OwnableUnauthorizedAccount");
     await token.write.transferOwnership([alice.account.address]);
-    expect(await token.read.owner()).to.equal(getAddress(owner.account.address));
-    await asAlice.write.acceptOwnership();
     expect(await token.read.owner()).to.equal(getAddress(alice.account.address));
+    await revertsWith(token.write.mint([owner.account.address, 1n]), "OwnableUnauthorizedAccount");
+  });
+
+  it("transfers, spends allowances and rejects overdrafts", async () => {
+    const { token, asAlice, owner, alice, bob } = await deploy();
+    await asAlice.write.faucet();
+    await asAlice.write.transfer([bob.account.address, 100n]);
+    expect(await token.read.balanceOf([bob.account.address])).to.equal(100n);
+    await asAlice.write.approve([owner.account.address, 50n]);
+    await token.write.transferFrom([alice.account.address, bob.account.address, 50n]);
+    expect(await token.read.allowance([alice.account.address, owner.account.address])).to.equal(0n);
+    await revertsWith(token.write.transferFrom([alice.account.address, bob.account.address, 1n]), "InsufficientAllowance");
+    await revertsWith(asAlice.write.transfer([bob.account.address, ONE_K]), "InsufficientBalance");
+    expect(await token.read.totalSupply()).to.equal(ONE_K);
   });
 
   it("pays a fixed faucet amount and tracks it", async () => {
