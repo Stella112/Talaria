@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import hre from "hardhat";
 import { parseSignature } from "viem";
-import { deployCore, FUTURE, revertsWith } from "./helpers";
+import { deployCore, FUTURE, revertsWith, signIntent } from "./helpers";
 
 describe("TalariaCore accounts", () => {
   it("deposits and withdraws", async () => {
@@ -50,5 +50,55 @@ describe("TalariaCore accounts", () => {
     expect(events.length).to.equal(2);
     expect(events[0].args.receiptId).to.not.equal(events[1].args.receiptId);
     expect(await core.read.balances([bob.account.address])).to.equal(500_000_010n);
+  });
+});
+
+describe("TalariaCore intents", () => {
+  async function setup() {
+    const ctx = await deployCore();
+    const asRelayer = await ctx.as("TalariaCore", ctx.core.address, ctx.relayer);
+    const base = {
+      rail: 0,
+      owner: ctx.alice.account.address,
+      signer: ctx.alice.account.address,
+      payee: ctx.bob.account.address,
+      amount: 7n,
+      nonce: 0n,
+    };
+    return { ...ctx, asRelayer, base };
+  }
+
+  it("executes an owner intent submitted by a relayer", async () => {
+    const { core, alice, bob, asRelayer, base } = await setup();
+    await asRelayer.write.execute(await signIntent(core, alice, base));
+    expect(await core.read.balances([bob.account.address])).to.equal(500_000_007n);
+    expect(await core.read.nonces([alice.account.address])).to.equal(1n);
+  });
+
+  it("withdraws to the payee through an action", async () => {
+    const { core, token, alice, carol, asRelayer, base } = await setup();
+    await asRelayer.write.execute(await signIntent(core, alice, { ...base, rail: 0x10, payee: carol.account.address }));
+    expect(await token.read.balanceOf([carol.account.address])).to.equal(7n);
+  });
+
+  it("rejects replay, wrong nonce, expiry and forged signatures", async () => {
+    const { core, alice, bob, asRelayer, base } = await setup();
+    const args = await signIntent(core, alice, base);
+    await asRelayer.write.execute(args);
+    await revertsWith(asRelayer.write.execute(args), "BadNonce");
+    await revertsWith(asRelayer.write.execute(await signIntent(core, alice, { ...base, nonce: 5n })), "BadNonce");
+    await revertsWith(asRelayer.write.execute(await signIntent(core, alice, { ...base, nonce: 1n, deadline: 1n })), "IntentExpired");
+    await revertsWith(asRelayer.write.execute(await signIntent(core, bob, { ...base, nonce: 1n })), "BadSignature");
+  });
+
+  it("rejects a tampered amount", async () => {
+    const { core, alice, asRelayer, base } = await setup();
+    const [intent, v, r, s] = await signIntent(core, alice, base);
+    await revertsWith(asRelayer.write.execute([{ ...intent, amount: 8n }, v, r, s]), "BadSignature");
+  });
+
+  it("rejects unknown rails", async () => {
+    const { core, alice, asRelayer, base } = await setup();
+    await revertsWith(asRelayer.write.execute(await signIntent(core, alice, { ...base, rail: 9 })), "UnknownRail");
   });
 });

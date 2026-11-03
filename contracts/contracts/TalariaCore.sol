@@ -14,16 +14,40 @@ interface ITalariaToken {
 /// @dev Kept small on purpose because code size costs tPOT deposits on Portaldot.
 contract TalariaCore is ReentrancyGuard {
     uint8 public constant RAIL_ACCOUNT = 0;
+    uint8 private constant ACTION_WITHDRAW = 1;
+
+    bytes32 private constant DOMAIN_TYPEHASH =
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 private constant INTENT_TYPEHASH = keccak256(
+        "Intent(uint8 rail,address owner,address signer,address payee,uint256 amount,bytes32 ref,uint256 nonce,uint256 deadline)"
+    );
+
+    /// @dev Low 4 bits of `rail` select the rail, high 4 bits select the action within it.
+    struct Intent {
+        uint8 rail;
+        address owner;
+        address signer;
+        address payee;
+        uint256 amount;
+        bytes32 ref;
+        uint256 nonce;
+        uint256 deadline;
+    }
 
     ITalariaToken public immutable token;
     address public immutable owner;
 
     mapping(address => uint256) public balances;
     uint256 public receiptCount;
+    mapping(address => uint256) public nonces;
 
     error NotAuthorized();
     error InsufficientBalance();
     error TransferFailed();
+    error IntentExpired();
+    error BadNonce();
+    error BadSignature();
+    error UnknownRail();
 
     event Deposited(address indexed account, uint256 amount);
     event Withdrawn(address indexed account, address indexed to, uint256 amount);
@@ -51,6 +75,35 @@ contract TalariaCore is ReentrancyGuard {
     /// @notice Pays another internal account and emits a receipt.
     function pay(address to, uint256 amount, bytes32 ref) external nonReentrant {
         _settle(RAIL_ACCOUNT, msg.sender, to, amount, ref);
+    }
+
+    /// @notice Executes a signed intent. Any relayer can submit it and pays the gas.
+    function execute(Intent calldata intent, uint8 v, bytes32 r, bytes32 s) external nonReentrant {
+        if (block.timestamp > intent.deadline) revert IntentExpired();
+        if (intent.nonce != nonces[intent.signer]++) revert BadNonce();
+        address recovered = ecrecover(_digest(intent), v, r, s);
+        if (recovered == address(0) || recovered != intent.signer) revert BadSignature();
+        if (intent.signer != intent.owner) revert NotAuthorized();
+        _dispatch(intent);
+    }
+
+    function domainSeparator() public view returns (bytes32) {
+        return keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256("TalariaCore"), keccak256("1"), block.chainid, address(this)));
+    }
+
+    function _digest(Intent calldata intent) private view returns (bytes32) {
+        return keccak256(abi.encodePacked("", domainSeparator(), keccak256(abi.encode(INTENT_TYPEHASH, intent))));
+    }
+
+    function _dispatch(Intent calldata intent) private {
+        uint8 rail = intent.rail & 0x0f;
+        uint8 action = intent.rail >> 4;
+        if (rail == RAIL_ACCOUNT) {
+            if (action == ACTION_WITHDRAW) _withdraw(intent.owner, intent.payee, intent.amount);
+            else _settle(RAIL_ACCOUNT, intent.owner, intent.payee, intent.amount, intent.ref);
+        } else {
+            revert UnknownRail();
+        }
     }
 
     function _deposit(address from, uint256 amount) private {
