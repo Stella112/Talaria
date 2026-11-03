@@ -15,3 +15,5 @@ Open:
 - Deployer and native wallet balances: waiting on public addresses in `.env`.
 - `autoMap` behaviour: UNVERIFIED, may remove the need for an explicit `map_account`.
 - Real per-contract deposit: measured in Phase 1.
+
+Balances at 2026-11-03T10:37Z: native wallet 1000 tPOT free, EVM deployer 0 tPOT.

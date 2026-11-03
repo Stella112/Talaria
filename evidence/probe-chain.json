@@ -1,5 +1,5 @@
 {
-  "timestampUTC": "2026-11-03T10:27:57.674Z",
+  "timestampUTC": "2026-11-03T10:37:04.902Z",
   "endpoints": {
     "EVM_RPC": "https://test-evm-rpc-v3.portaldot.dev",
     "WS": "wss://test-node-v3.portaldot.dev"
@@ -11,7 +11,7 @@
     },
     "eth_blockNumber": {
       "ok": true,
-      "result": "0x4a6b4"
+      "result": "0x4a70f"
     },
     "web3_clientVersion": {
       "ok": true,
@@ -19,7 +19,7 @@
     },
     "eth_gasPrice": {
       "ok": true,
-      "result": "0x5b27"
+      "result": "0x5b22"
     },
     "net_version": {
       "ok": true,
@@ -34,7 +34,7 @@
       "result": {
         "from": "0x0000000000000000000000000000000000000000",
         "gas": "0x0",
-        "gasUsed": "0x7acb272968",
+        "gasUsed": "0x7ad261413d",
         "to": "0x0000000000000000000000000000000000000000",
         "input": "0x",
         "value": "0x0",
@@ -53,8 +53,8 @@
       "tPOT"
     ],
     "ss58Format": 42,
-    "latestBlock": 304822,
-    "finalizedBlock": 304820,
+    "latestBlock": 304913,
+    "finalizedBlock": 304910,
     "measuredBlockTimeMs": 6000,
     "existentialDeposit": "10000000000000",
     "hasRevivePallet": true,
@@ -172,8 +172,22 @@
       }
     }
   ],
-  "deployerEvm": "DEPLOYER_H160 not set",
-  "nativeWallet": "NATIVE_SS58 not set",
+  "deployerEvm": {
+    "h160": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "account": "5Gs6eMnU5iB9YXaXeEugC9swqBDsY4bE7UnZAKkeB2gvgAzb",
+    "evmWei": "0",
+    "substrateFreePlanck": "0",
+    "substrateReservedPlanck": "0",
+    "wei_equals_free_times_1e4": true
+  },
+  "nativeWallet": {
+    "h160": "0x23D3a3b294FaB3B3E09115a0dC9e4F138309ADda",
+    "account": "5D4e6nW6i8BbBjyjPkHkUA845bUR1WoyHCgRcDzXb1BpGfTn",
+    "evmWei": "999900000000000000000",
+    "substrateFreePlanck": "100000000000000000",
+    "substrateReservedPlanck": "0",
+    "wei_equals_free_times_1e4": false
+  },
   "urls": [
     {
       "url": "https://node-console.portaldot.dev/",
