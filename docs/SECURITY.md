@@ -14,6 +14,18 @@ Talaria is a hackathon build on testnets, using test tokens with no value. It ha
 
 In the current deployment one key is the deployer, Core owner, lockbox owner, tUSD owner and relayer. A production system would separate these and use multi-signer control.
 
+## Trust-priced settlement
+
+- **Attester.** One key signs reputation scores. If it is compromised, it can make any merchant look trusted, removing buyers' hold window, or give an agent a higher cap up to its mandate. The contract's attester is fixed at deploy, so replacing it needs a redeploy.
+- **Arbiter.** One address decides every dispute. It can give the funds to either side.
+- **Score scope.** Only the settlement wallet's feedback counts. This resists fake reviews, but the wallet is another trusted party.
+- **Tiers are fixed at deploy,** to save about 28 tPOT of bytecode.
+- **Gasless disputes carry no reason hash.** A direct `dispute` call can include one.
+- **A merchant can refuse to refund after release,** and a released payment can no longer be disputed. That is why new merchants have a hold.
+- **Mandates move funds without Core's session-key policy.** The owner's mandate signature is the authority, with its own limits.
+- **The hosted agent's rate limits are in memory,** per process. Forwarded addresses are ignored unless `TRUST_PROXY=1`, which should only be set behind a known proxy.
+- **Bridge-out locks tUSD and does not burn it.** Total supply stays the same.
+
 ## Bridge
 
 A single trusted relayer means locks and credits are not linked trustlessly. If the relayer is offline, or the reserve is empty, a lock is not credited, and only the lockbox owner can release it. The app turns off "Pay from Base" when the reserve is too low. Multi-signer bridging is on the roadmap only.

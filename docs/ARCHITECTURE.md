@@ -1,5 +1,17 @@
 # Architecture
 
+## Trust-priced settlement
+
+1. **Identity.** A merchant or agent registers in the ERC-8004 Identity Registry on Base Sepolia, then its owner signs a link from that agent id to a Portaldot address.
+2. **Read.** The relayer reads `getSummary` from the Reputation Registry at a fixed block, counting only the settlement wallet's feedback.
+3. **Attest.** A dedicated attester key signs a short-lived `TrustAttestation`. Nothing about reputation is stored on Portaldot.
+4. **Pay.** `TalariaProtect` verifies the attestation inline and applies its tier: the merchant's score sets the hold, and the agent's score sets its cap.
+5. **Settle.** Funds release after the hold, or a dispute freezes them until the arbiter decides.
+6. **Write back.** The settlement wallet writes feedback to Base for each outcome, once, referencing the Portaldot transaction. The registry rejects self-feedback from an agent's owner or operators, so this wallet must not own any subject.
+
+`TalariaProtect` and `TalariaBridgeOut` register as rails 6 and 7 on the deployed Core, so Core needed no change. Neither is deployed yet.
+
+
 ```mermaid
 flowchart TB
   subgraph Clients
@@ -76,7 +88,7 @@ Measured on V3, see `evidence/`. Revive constants: 0.06 tPOT per byte of deposit
 
 | Item | Cost |
 |---|---|
-| Deploying code | About 0.08 tPOT per runtime byte |
+| Deploying code | About 0.0781 tPOT per runtime byte, plus 17 per contract (fitted to the two rows below) |
 | New 32-byte storage slot | About 3.84 tPOT |
 | TalariaUSD (3,018 bytes) | 252.69 tPOT |
 | TalariaCore (8,539 bytes) | 683.89 tPOT |

@@ -31,3 +31,9 @@ Balances at 2026-11-03T10:37Z: native wallet 1000 tPOT free, EVM deployer 0 tPOT
 
 ## Phase 6: Docs and submission pack
 - README, architecture, security, demo script, pitch outline and SDK README written from recorded evidence.
+
+## Addenda 2 and 3
+- TalariaLockboxV2 live on Base Sepolia at `0xc8675f5a54bdfd78d6ffbed8551393c8e462b1bd`.
+- TalariaProtect (8,401 bytes) and TalariaBridgeOut (1,161 bytes) built and tested locally. Live estimate for the batch: 789.14 tPOT.
+- Trust attester, feedback, webhooks, idempotency, x402 v2 headers, hosted agent and scripts built. Tested locally or with stubs.
+- Waiting on tPOT for the batch and the live trust flow.
