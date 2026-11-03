@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { encodeFunctionData, type Address } from "viem";
 import { useConnection } from "wagmi";
+import { TrustBadge, useTrust } from "@/components/trust";
 import { getWalletClient } from "wagmi/actions";
 import { ActionButton, Card, Empty, Field, NeedsWallet, Notice, Row, TxHash } from "@/components/ui";
 import { AGENT_PATH, client, CORE_DEPLOY_BLOCK, reader, short, signer, tusd, wagmiConfig } from "@/lib/talaria";
@@ -66,10 +67,47 @@ export default function Agent() {
   });
   const activity = useQuery({ queryKey: ["activity", address], enabled: Boolean(address), queryFn: () => reader.getReceipts({ payer: address!, fromBlock: CORE_DEPLOY_BLOCK }) });
 
+  const [mandateAgent, setMandateAgent] = useState("");
+  const [mandatePayee, setMandatePayee] = useState("");
+  const [mandateMax, setMandateMax] = useState("5");
+  const [signedMandate, setSignedMandate] = useState<string>();
+  const [revokeHash, setRevokeHash] = useState("");
+  const isAddress = (value: string) => /^0x[0-9a-fA-F]{40}$/.test(value);
+  const agentTrust = useTrust(isAddress(mandateAgent) ? (mandateAgent as Address) : undefined);
+  const CAPS = { trusted: 100, established: 25, new: 5 } as const;
+
   const railOptions = Object.entries(RailBit).filter(([name]) => name !== "account");
 
   return (
     <NeedsWallet>
+      <Card title="Approve an agent purchase" note="A mandate lets one agent key pay one merchant, up to one amount, for 30 minutes and one use. Nothing else is allowed. Limits are enforced on-chain.">
+        {reader.addresses.protect ? (
+          <>
+            <Field label="Agent key address (0x…)" value={mandateAgent} onChange={(e) => setMandateAgent(e.target.value)} />
+            {agentTrust.data && (
+              <p className="text-sm text-[var(--muted)]">
+                This agent's reputation is {agentTrust.data.score} from {agentTrust.data.feedbackCount} feedbacks, so it can pay up to {CAPS[agentTrust.data.tier]} tUSD at a time. Its cap rises as it builds history.
+              </p>
+            )}
+            <Field label="Allowed merchant (0x…)" value={mandatePayee} onChange={(e) => setMandatePayee(e.target.value)} />
+            {isAddress(mandatePayee) && <TrustBadge subject={mandatePayee as Address} holdMinutes={{ established: 10, new: 30 }} />}
+            <Field label="Maximum (tUSD)" inputMode="decimal" value={mandateMax} onChange={(e) => setMandateMax(e.target.value)} />
+            <ActionButton
+              label="Sign mandate"
+              disabled={!isAddress(mandateAgent) || !isAddress(mandatePayee)}
+              run={async () => {
+                const signed = await (await signer()).createMandate({ agent: mandateAgent as Address, payees: [mandatePayee as Address], maxAmount: mandateMax, maxUses: 1 });
+                setSignedMandate(JSON.stringify(signed, (_, value) => (typeof value === "bigint" ? value.toString() : value), 2));
+              }}
+            />
+            {signedMandate && <pre className="overflow-x-auto rounded-2xl bg-white p-3 text-xs">{signedMandate}</pre>}
+            <Field label="Mandate hash to revoke" value={revokeHash} onChange={(e) => setRevokeHash(e.target.value)} />
+            <ActionButton secondary label="Revoke mandate" disabled={!/^0x[0-9a-fA-F]{64}$/.test(revokeHash)} run={async () => (await signer()).revokeMandate(revokeHash as `0x${string}`)} />
+          </>
+        ) : (
+          <Notice>Mandates are built and tested locally, but TalariaProtect is not deployed on this network yet.</Notice>
+        )}
+      </Card>
       <Card title="Session key" note="Gives an agent's key limited spending from your account. The limits are enforced on-chain. Costs the relayer about 7.7 tPOT.">
         <Field label="Agent key address (0x…)" value={key} onChange={(e) => setKey(e.target.value)} />
         <div className="grid grid-cols-2 gap-3">

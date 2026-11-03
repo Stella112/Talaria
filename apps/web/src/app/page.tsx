@@ -19,6 +19,8 @@ const STEPS = [
 
 const RAILS: { name: string; text: string; key?: keyof Addresses }[] = [
   { name: "Checkout", text: "Invoices, payment links and refunds, paid gaslessly." },
+  { name: "Buyer protection", text: "Trust decides the hold. Buyers can dispute while it lasts, and a trusted arbiter resolves it.", key: "protect" },
+  { name: "Bridge-out", text: "Move funds back to Base, with replay protection on both sides.", key: "bridgeOut" },
   { name: "Pay-per-call", text: "HTTP 402 APIs paid with vouchers that settle in one transaction.", key: "channels" },
   { name: "Subscriptions", text: "Merchant plans charged only when due, within a cap.", key: "subscriptions" },
   { name: "Streaming", text: "Per-second payments with computed accrual.", key: "streams" },
@@ -62,7 +64,7 @@ export default function Overview() {
           </Pill>
           <h1 className="mt-5 text-5xl leading-[1.05] font-semibold md:text-7xl">Payments with wings.</h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-[var(--muted)]">
-            The payment layer for people and AI agents on Portaldot. Fund from another chain, pay without gas, and keep every payment policy-checked and receipted on-chain.
+            Trust-priced settlement for people and AI agents. Reputation from any chain decides how fast money moves on Portaldot, and what happens on Portaldot writes reputation back.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link href="/merchant" className="flex min-h-12 items-center rounded-full bg-[var(--ink)] px-6 font-semibold text-white transition-opacity hover:opacity-85">
@@ -133,8 +135,8 @@ export default function Overview() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pt-20 md:px-6 md:pt-28">
-        <Pill>Five rails</Pill>
-        <h2 className="mt-4 max-w-2xl text-4xl font-semibold md:text-5xl">Every way to get paid</h2>
+        <Pill>What it does</Pill>
+        <h2 className="mt-4 max-w-2xl text-4xl font-semibold md:text-5xl">Money that can move, and come back</h2>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {RAILS.map((rail) => {
             const live = !rail.key || Boolean(reader.addresses[rail.key]);

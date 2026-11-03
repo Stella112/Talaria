@@ -17,7 +17,7 @@ export const AGENT_PATH = "/api/agent";
 /** Core was deployed here, so older blocks hold no events worth scanning. */
 export const CORE_DEPLOY_BLOCK = 305483n;
 
-export const client = portaldotClient();
+export const client = portaldotClient(typeof window === "undefined" ? undefined : `${window.location.origin}/api/rpc`);
 /** Read-only SDK: needs no wallet. */
 export const reader = createTalaria({ publicClient: client });
 export const LOCKBOX = baseSepoliaDeployments.TalariaLockbox;

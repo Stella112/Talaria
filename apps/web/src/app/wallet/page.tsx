@@ -6,7 +6,7 @@ import { useState } from "react";
 import { encodeFunctionData } from "viem";
 import { useConnection } from "wagmi";
 import { getWalletClient } from "wagmi/actions";
-import { ActionButton, Card, Empty, Field, NeedsWallet, Row, TxHash } from "@/components/ui";
+import { ActionButton, Card, Empty, Field, NeedsWallet, Notice, Row, TxHash } from "@/components/ui";
 import { client, CORE_DEPLOY_BLOCK, reader, short, signer, tusd, wagmiConfig } from "@/lib/talaria";
 import { portaldotTestnet } from "@talaria-pay/sdk";
 
@@ -14,6 +14,8 @@ export default function Wallet() {
   const { address } = useConnection();
   const [depositAmount, setDeposit] = useState("10");
   const [withdrawAmount, setWithdraw] = useState("1");
+  const [baseAmount, setBaseAmount] = useState("1");
+  const [bridgeId, setBridgeId] = useState<string>();
 
   const balances = useQuery({
     queryKey: ["balances", address],
@@ -77,6 +79,26 @@ export default function Wallet() {
             return hash;
           }}
         />
+      </Card>
+      <Card title="Withdraw to Base" note="Moves tUSD back to Base Sepolia as test mUSDC, gaslessly. One trusted relayer releases it there.">
+        {reader.addresses.bridgeOut ? (
+          <>
+            <Field label="Amount (tUSD)" inputMode="decimal" value={baseAmount} onChange={(e) => setBaseAmount(e.target.value)} />
+            <ActionButton
+              secondary
+              label="Withdraw to Base"
+              run={async () => {
+                const { id, txHash } = await (await signer()).bridgeOut({ amount: baseAmount, destChainId: 84532, recipient: address! });
+                setBridgeId(id);
+                await balances.refetch();
+                return txHash;
+              }}
+            />
+            {bridgeId && <p className="text-xs break-all text-[var(--muted)]">Bridge-out id: {bridgeId}. The relayer releases it after a few confirmations.</p>}
+          </>
+        ) : (
+          <Notice>The bridge-out contract is built and tested locally, but it is not deployed on this network yet.</Notice>
+        )}
       </Card>
       <Card title="Receipts" note="Payments made from this account. The RPC can prune old logs, so older receipts may be missing.">
         {receipts.data?.length ? (
