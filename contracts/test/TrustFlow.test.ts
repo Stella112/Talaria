@@ -56,6 +56,10 @@ describe("LOCAL trust-priced settlement, end to end", () => {
     const asRelayer = await ctx.as("TalariaCore", ctx.core.address, ctx.relayer);
     await asRelayer.write.creditFromBridge([buyer.address, TUSD(20), BigInt(BASE), `0x${"11".repeat(32)}`]);
 
+    // Earlier test files move this chain's clock ahead of the wall clock, so lifetimes allow for the gap.
+    const clockGap = Number(await now()) - Math.floor(Date.now() / 1000);
+    const lifetime = clockGap + 1800;
+
     const db = new Db();
     const store = new Store();
     db.linkIdentity(newShop.address, NEW_SHOP, newShop.address, "0x");
@@ -69,7 +73,7 @@ describe("LOCAL trust-priced settlement, end to end", () => {
       [AGENT_NEW.toString()]: [0n, 0n, 0],
     };
     const base = { getBlockNumber: async () => 999n, readContract: async ({ args }: any) => reputation[args[0].toString()] } as any;
-    const trust = new TrustService({ base, db, attester, settlementClient: wallets[7].account.address, protect: protect.address, portaldotChainId: chainId, srcChainId: BigInt(BASE) });
+    const trust = new TrustService({ base, db, attester, settlementClient: wallets[7].account.address, protect: protect.address, portaldotChainId: chainId, srcChainId: BigInt(BASE), now: () => Math.floor(Date.now() / 1000) + clockGap });
 
     const common = { portaldot: publicClient, wallet: relayerWallet, core: ctx.core.address, store, maxTxPerHour: 100, live: true };
     const chain = liveChain({ ...common, base: publicClient, srcChainId: BigInt(BASE) });
@@ -78,9 +82,6 @@ describe("LOCAL trust-priced settlement, end to end", () => {
     const app = buildServer(chain, store, { db, trust, protect: settlement });
     const relayerUrl = await app.listen({ port: 0, host: "127.0.0.1" });
     const addresses = { token: ctx.token.address, core: ctx.core.address, protect: protect.address, bridgeOut: bridgeOut.address };
-    // Earlier test files move this chain's clock ahead of the wall clock the SDK reads, so lifetimes allow for the gap.
-    const clockGap = Number(await now()) - Math.floor(Date.now() / 1000);
-    const lifetime = clockGap + 1800;
     const sdkFor = (account: any) => createTalaria({ account, publicClient, relayerUrl, addresses, intentTtl: lifetime });
     const buyerSdk = sdkFor(buyer);
     const agentSdk = sdkFor(agent);
