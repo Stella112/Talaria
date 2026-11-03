@@ -9,11 +9,20 @@ interface ITalariaToken {
     function permit(address holder, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external;
 }
 
+/// @notice Implemented by rail contracts so signed intents can reach them.
+interface ITalariaRail {
+    function onIntent(uint8 action, address owner, address signer, address payee, uint256 amount, bytes32 ref) external;
+}
+
 /// @title TalariaCore
-/// @notice Payment engine: internal tUSD accounts and receipts.
+/// @notice Payment engine: internal tUSD accounts, signed intents, session keys, checkout,
+/// bridge credit and receipts. Other rails are separate contracts registered by the owner.
 /// @dev Kept small on purpose because code size costs tPOT deposits on Portaldot.
 contract TalariaCore is ReentrancyGuard {
     uint8 public constant RAIL_ACCOUNT = 0;
+    uint8 public constant RAIL_CHECKOUT = 1;
+    uint8 private constant ACTION_CREATE_INVOICE = 1;
+    uint8 private constant ACTION_REFUND = 2;
     uint8 private constant ACTION_WITHDRAW = 1;
     uint8 private constant ACTION_ADD_KEY = 2;
     uint8 private constant ACTION_REVOKE_KEY = 3;
@@ -46,6 +55,14 @@ contract TalariaCore is ReentrancyGuard {
         address payee; // zero means any payee
     }
 
+    struct Invoice {
+        address merchant;
+        uint64 amount;
+        uint32 expiry;
+        address payer; // zero until paid
+        uint64 refunded;
+    }
+
     ITalariaToken public immutable token;
     address public immutable owner;
 
@@ -54,6 +71,12 @@ contract TalariaCore is ReentrancyGuard {
     mapping(address => uint256) public nonces;
     mapping(address => mapping(address => SessionKey)) public sessionKeys;
     mapping(bytes32 => address) public pendingOwner;
+    mapping(uint256 => Invoice) public invoices;
+    uint256 public invoiceCount;
+    mapping(uint8 => address) public modules;
+    address public relayer;
+    uint256 public bridgeReserve;
+    mapping(bytes32 => bool) public bridgeProcessed;
 
     error NotAuthorized();
     error InsufficientBalance();
@@ -64,6 +87,11 @@ contract TalariaCore is ReentrancyGuard {
     error UnknownRail();
     error KeyInvalid();
     error NotPending();
+    error InvoiceUnavailable();
+    error IntentMismatch();
+    error RefundTooLarge();
+    error AlreadyProcessed();
+    error ReserveTooLow();
 
     event Deposited(address indexed account, uint256 amount);
     event Withdrawn(address indexed account, address indexed to, uint256 amount);
@@ -73,6 +101,12 @@ contract TalariaCore is ReentrancyGuard {
     event SessionKeyRevoked(address indexed owner, address indexed key);
     event IntentQueued(bytes32 indexed intentHash, address indexed owner, address indexed signer, uint8 rail, address payee, uint256 amount, bytes32 ref, uint256 nonce, uint256 deadline);
     event IntentResolved(bytes32 indexed intentHash, bool approved);
+
+    event InvoiceCreated(uint256 indexed id, address indexed merchant, uint64 amount, uint32 expiry, bytes32 metadataHash);
+    event ModuleSet(uint8 indexed rail, address module);
+    event RelayerSet(address relayer);
+    event ReserveFunded(address indexed from, uint256 amount);
+    event BridgeCredited(address indexed user, uint256 amount, uint256 srcChainId, bytes32 indexed srcTxHash);
 
     constructor(ITalariaToken token_, address owner_) {
         token = token_;
@@ -130,6 +164,78 @@ contract TalariaCore is ReentrancyGuard {
 
     function rejectPending(bytes32 intentHash) external {
         _resolve(intentHash, false);
+    }
+
+    function createInvoice(uint64 amount, bytes32 metadataHash, uint32 expiry) external returns (uint256) {
+        return _createInvoice(msg.sender, amount, metadataHash, expiry);
+    }
+
+    function payInvoice(uint256 id) external nonReentrant {
+        _payInvoice(msg.sender, id);
+    }
+
+    function refund(uint256 id, uint64 amount) external nonReentrant {
+        _refund(msg.sender, id, amount);
+    }
+
+    function setModule(uint8 rail, address module) external {
+        if (msg.sender != owner) revert NotAuthorized();
+        modules[rail] = module;
+        emit ModuleSet(rail, module);
+    }
+
+    function setRelayer(address newRelayer) external {
+        if (msg.sender != owner) revert NotAuthorized();
+        relayer = newRelayer;
+        emit RelayerSet(newRelayer);
+    }
+
+    /// @notice Adds tUSD that bridge credits draw from.
+    function fundReserve(uint256 amount) external nonReentrant {
+        bridgeReserve += amount;
+        emit ReserveFunded(msg.sender, amount);
+        if (!token.transferFrom(msg.sender, address(this), amount)) revert TransferFailed();
+    }
+
+    /// @notice Credits a user for a lock seen on a source chain. Trusted single relayer in this build.
+    function creditFromBridge(address user, uint256 amount, uint256 srcChainId, bytes32 srcTxHash) external {
+        if (msg.sender != relayer) revert NotAuthorized();
+        if (bridgeProcessed[srcTxHash]) revert AlreadyProcessed();
+        if (bridgeReserve < amount) revert ReserveTooLow();
+        bridgeProcessed[srcTxHash] = true;
+        unchecked {
+            bridgeReserve -= amount;
+        }
+        balances[user] += amount;
+        emit BridgeCredited(user, amount, srcChainId, srcTxHash);
+    }
+
+    /// @notice Moves internal balances for a registered rail contract, which must authorise `from` itself.
+    function railTransfer(uint8 rail, address from, address to, uint256 amount, bytes32 ref, bool receipt) external {
+        if (msg.sender != modules[rail] || msg.sender == address(0)) revert NotAuthorized();
+        if (receipt) _settle(rail, from, to, amount, ref);
+        else _move(from, to, amount);
+    }
+
+    function _createInvoice(address merchant, uint64 amount, bytes32 metadataHash, uint32 expiry) private returns (uint256 id) {
+        id = ++invoiceCount;
+        invoices[id] = Invoice(merchant, amount, expiry, address(0), 0);
+        emit InvoiceCreated(id, merchant, amount, expiry, metadataHash);
+    }
+
+    function _payInvoice(address payer, uint256 id) private {
+        Invoice storage invoice = invoices[id];
+        if (invoice.merchant == address(0) || invoice.payer != address(0) || block.timestamp > invoice.expiry) revert InvoiceUnavailable();
+        invoice.payer = payer;
+        _settle(RAIL_CHECKOUT, payer, invoice.merchant, invoice.amount, bytes32(id));
+    }
+
+    function _refund(address merchant, uint256 id, uint64 amount) private {
+        Invoice storage invoice = invoices[id];
+        if (invoice.merchant != merchant) revert NotAuthorized();
+        if (invoice.payer == address(0) || uint256(invoice.refunded) + amount > invoice.amount) revert RefundTooLarge();
+        invoice.refunded += amount;
+        _settle(RAIL_CHECKOUT, merchant, invoice.payer, amount, bytes32(id));
     }
 
     function _resolve(bytes32 intentHash, bool approved) private {
@@ -191,8 +297,23 @@ contract TalariaCore is ReentrancyGuard {
             } else {
                 _settle(RAIL_ACCOUNT, intent.owner, intent.payee, intent.amount, intent.ref);
             }
+        } else if (rail == RAIL_CHECKOUT) {
+            uint256 id = uint256(intent.ref);
+            Invoice storage invoice = invoices[id];
+            if (action == ACTION_CREATE_INVOICE) {
+                _createInvoice(intent.owner, uint64(intent.amount), intent.ref, uint32(intent.deadline));
+            } else if (action == ACTION_REFUND) {
+                if (invoice.payer != intent.payee) revert IntentMismatch();
+                _refund(intent.owner, id, uint64(intent.amount));
+            } else {
+                // The signed payee and amount must match, so policies check what is really paid.
+                if (invoice.merchant != intent.payee || invoice.amount != intent.amount) revert IntentMismatch();
+                _payInvoice(intent.owner, id);
+            }
         } else {
-            revert UnknownRail();
+            address module = modules[rail];
+            if (module == address(0)) revert UnknownRail();
+            ITalariaRail(module).onIntent(action, intent.owner, intent.signer, intent.payee, intent.amount, intent.ref);
         }
     }
 

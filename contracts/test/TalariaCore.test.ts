@@ -200,3 +200,101 @@ describe("TalariaCore session keys", () => {
     expect((await core.read.sessionKeys([k, carol.account.address]))[4]).to.equal(0);
   });
 });
+
+describe("TalariaCore checkout", () => {
+  const META = `0x${"ab".repeat(32)}` as `0x${string}`;
+  const idRef = (id: bigint) => `0x${id.toString(16).padStart(64, "0")}` as `0x${string}`;
+
+  async function setup() {
+    const ctx = await deployCore();
+    const merchant = await ctx.as("TalariaCore", ctx.core.address, ctx.bob);
+    const payer = await ctx.as("TalariaCore", ctx.core.address, ctx.alice);
+    const asRelayer = await ctx.as("TalariaCore", ctx.core.address, ctx.relayer);
+    await merchant.write.createInvoice([100n, META, Number((await now()) + HOUR)]);
+    return { ...ctx, merchant, payer, asRelayer };
+  }
+
+  it("pays once and emits a receipt", async () => {
+    const { core, alice, bob, payer } = await setup();
+    await payer.write.payInvoice([1n]);
+    expect(await core.read.balances([bob.account.address])).to.equal(500_000_100n);
+    expect(await core.read.balances([alice.account.address])).to.equal(499_999_900n);
+    const [receipt] = await core.getEvents.Receipt({}, { fromBlock: 0n });
+    expect(receipt.args.rail).to.equal(1);
+    await revertsWith(payer.write.payInvoice([1n]), "InvoiceUnavailable");
+  });
+
+  it("rejects unknown and expired invoices", async () => {
+    const { payer } = await setup();
+    await revertsWith(payer.write.payInvoice([9n]), "InvoiceUnavailable");
+    await increase(HOUR + 1n);
+    await revertsWith(payer.write.payInvoice([1n]), "InvoiceUnavailable");
+  });
+
+  it("refunds partly and fully, never beyond the amount", async () => {
+    const { core, alice, merchant, payer } = await setup();
+    await revertsWith(merchant.write.refund([1n, 1n]), "RefundTooLarge");
+    await payer.write.payInvoice([1n]);
+    await revertsWith(payer.write.refund([1n, 1n]), "NotAuthorized");
+    await merchant.write.refund([1n, 40n]);
+    await merchant.write.refund([1n, 60n]);
+    expect(await core.read.balances([alice.account.address])).to.equal(500_000_000n);
+    await revertsWith(merchant.write.refund([1n, 1n]), "RefundTooLarge");
+  });
+
+  it("pays through an intent only when payee and amount match", async () => {
+    const { core, alice, bob, asRelayer } = await setup();
+    const a = alice.account.address;
+    const base = { rail: 1, owner: a, signer: a, payee: bob.account.address, ref: idRef(1n) };
+    await revertsWith(asRelayer.write.execute(await signIntent(core, alice, { ...base, amount: 1n, nonce: 0n })), "IntentMismatch");
+    await revertsWith(asRelayer.write.execute(await signIntent(core, alice, { ...base, payee: a, amount: 100n, nonce: 0n })), "IntentMismatch");
+    await asRelayer.write.execute(await signIntent(core, alice, { ...base, amount: 100n, nonce: 0n }));
+    expect(await core.read.balances([bob.account.address])).to.equal(500_000_100n);
+  });
+
+  it("creates and refunds through intents", async () => {
+    const { core, alice, bob, payer, asRelayer } = await setup();
+    const b = bob.account.address;
+    await asRelayer.write.execute(await signIntent(core, bob, { rail: 0x11, owner: b, signer: b, payee: b, amount: 5n, ref: META, nonce: 0n, deadline: (await now()) + HOUR }));
+    expect(await core.read.invoiceCount()).to.equal(2n);
+    await payer.write.payInvoice([2n]);
+    await asRelayer.write.execute(await signIntent(core, bob, { rail: 0x21, owner: b, signer: b, payee: alice.account.address, amount: 5n, ref: idRef(2n), nonce: 1n }));
+    expect(await core.read.balances([alice.account.address])).to.equal(500_000_000n);
+  });
+});
+
+describe("TalariaCore bridge credit", () => {
+  const TX = `0x${"cd".repeat(32)}` as `0x${string}`;
+
+  async function setup() {
+    const ctx = await deployCore();
+    await ctx.token.write.mint([ctx.owner.account.address, 1000n]);
+    await ctx.token.write.approve([ctx.core.address, 1000n]);
+    await ctx.core.write.fundReserve([1000n]);
+    await ctx.core.write.setRelayer([ctx.relayer.account.address]);
+    const asRelayer = await ctx.as("TalariaCore", ctx.core.address, ctx.relayer);
+    return { ...ctx, asRelayer };
+  }
+
+  it("credits from the reserve and blocks replay", async () => {
+    const { core, carol, asRelayer } = await setup();
+    await asRelayer.write.creditFromBridge([carol.account.address, 300n, 84532n, TX]);
+    expect(await core.read.balances([carol.account.address])).to.equal(300n);
+    expect(await core.read.bridgeReserve()).to.equal(700n);
+    await revertsWith(asRelayer.write.creditFromBridge([carol.account.address, 300n, 84532n, TX]), "AlreadyProcessed");
+  });
+
+  it("limits credit to the relayer and the reserve", async () => {
+    const { core, carol, asRelayer } = await setup();
+    await revertsWith(core.write.creditFromBridge([carol.account.address, 1n, 84532n, TX]), "NotAuthorized");
+    await revertsWith(asRelayer.write.creditFromBridge([carol.account.address, 1001n, 84532n, TX]), "ReserveTooLow");
+  });
+
+  it("limits admin functions and rail transfers", async () => {
+    const { core, alice, bob, asRelayer } = await setup();
+    await revertsWith(asRelayer.write.setRelayer([alice.account.address]), "NotAuthorized");
+    await revertsWith(asRelayer.write.setModule([2, alice.account.address]), "NotAuthorized");
+    await revertsWith(asRelayer.write.railTransfer([2, alice.account.address, bob.account.address, 1n, TX, true]), "NotAuthorized");
+    expect(await core.read.balances([alice.account.address])).to.equal(500_000_000n);
+  });
+});

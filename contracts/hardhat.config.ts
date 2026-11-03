@@ -9,7 +9,7 @@ const accounts = process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVAT
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.24",
-    settings: { evmVersion: "cancun", viaIR: process.env.VIA_IR === "1", optimizer: { enabled: true, runs: 200 } },
+    settings: { evmVersion: "cancun", viaIR: true, optimizer: { enabled: true, runs: 1 } },
   },
   networks: {
     portaldot: {
