@@ -4,7 +4,7 @@ import http from "node:http";
 import hre from "hardhat";
 import { parseEther } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { createTalaria, PriceTooHighError, RailBit, RailNotDeployedError, toRef } from "../../packages/sdk/src";
+import { createTalaria, decodeHeader, encodeHeader, PriceTooHighError, RailBit, RailNotDeployedError, signVoucher, toRef } from "../../packages/sdk/src";
 
 async function setup() {
   const [deployer] = await hre.viem.getWalletClients();
@@ -164,6 +164,34 @@ describe("SDK integration", () => {
       server.close();
     }
     void publicClient;
+  });
+
+  it("speaks x402 v2 headers alongside the existing flow", async () => {
+    const { user, addresses, publicClient } = await setup();
+    const agent = await user();
+    const provider = await user();
+    await agent.sdk.deposit("10");
+    const { channelId } = await agent.sdk.openChannel({ provider: provider.account.address, deposit: "1" });
+    const gate = provider.sdk.paywall({ price: "0.01", provider: provider.account.address });
+
+    const unpaid = await gate.handle({}, "/v1/block/latest");
+    expect(unpaid.status).to.equal(402);
+    const required = decodeHeader(unpaid.headers["payment-required"]);
+    expect(required.x402Version).to.equal(2);
+    expect(required.resource.url).to.equal("/v1/block/latest");
+    expect(required.accepts[0]).to.include({ scheme: "talaria-channel", amount: "10000", payTo: provider.account.address });
+    expect(required.accepts[0].network).to.equal(`eip155:${await publicClient.getChainId()}`);
+
+    const voucher = await signVoucher(agent.account, addresses.channels as any, await publicClient.getChainId(), { channelId, cumulativeAmount: 10_000n, nonce: 1n });
+    const signature = encodeHeader({ x402Version: 2, resource: required.resource, accepted: required.accepts[0], payload: { voucher } });
+    const paid = await gate.handle({ "payment-signature": signature }, "/v1/block/latest");
+    expect(paid.paid).to.equal(true);
+    expect(decodeHeader(paid.headers["payment-response"])).to.include({ success: true, transaction: "", payer: agent.account.address });
+
+    const replay = await gate.handle({ "payment-signature": signature }, "/v1/block/latest");
+    expect(replay.status).to.equal(402);
+    expect(decodeHeader(replay.headers["payment-required"]).error).to.include("does not cover");
+    expect((await gate.handle({ "payment-signature": "not base64 json" }, "/x")).status).to.equal(400);
   });
 
   it("reports rails with no deployed contract instead of faking them", async () => {

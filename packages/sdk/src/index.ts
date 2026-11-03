@@ -7,3 +7,4 @@ export * from "./intents";
 export * from "./mandates";
 export * from "./paywall";
 export * from "./webhooks";
+export * from "./x402";

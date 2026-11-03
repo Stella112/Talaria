@@ -2,6 +2,7 @@ import { recoverTypedDataAddress, serializeSignature, type Address, type Hex, ty
 import { z } from "zod";
 import { TalariaChannelsAbi } from "./generated";
 import { toUnits, TOKEN_DECIMALS, VOUCHER_TYPES, voucherDomain, type SignedVoucher } from "./intents";
+import { decodeHeader, encodeHeader, PAYMENT_REQUIRED, PAYMENT_RESPONSE, PAYMENT_SIGNATURE, paymentRequired, settlementResponse } from "./x402";
 
 export const VOUCHER_HEADER = "x-talaria-voucher";
 
@@ -58,7 +59,7 @@ export function createPaywall(deps: Deps, options: PaywallOptions) {
     };
   }
 
-  async function check(header: string | string[] | undefined): Promise<{ paid: true; voucher: SignedVoucher } | { paid: false; body: object }> {
+  async function check(header: string | string[] | undefined): Promise<{ paid: true; voucher: SignedVoucher; payer: Address } | { paid: false; body: { reason?: string } }> {
     if (typeof header !== "string") return { paid: false, body: await requirement() };
     let voucher: SignedVoucher;
     try {
@@ -90,25 +91,46 @@ export function createPaywall(deps: Deps, options: PaywallOptions) {
 
     seen.set(voucher.channelId, voucher.cumulativeAmount);
     await options.onVoucher?.(voucher);
-    return { paid: true, voucher };
+    return { paid: true, voucher, payer };
+  }
+
+  /** Checks either header style and returns the response headers to send, including x402 v2's. */
+  async function handle(headers: Record<string, unknown>, url: string): Promise<{ paid: boolean; status: number; headers: Record<string, string>; body?: object }> {
+    const chainId = await deps.client.getChainId();
+    let voucherHeader = headers[VOUCHER_HEADER] as string | undefined;
+    const signature = headers[PAYMENT_SIGNATURE];
+    if (typeof signature === "string") {
+      try {
+        voucherHeader = JSON.stringify(decodeHeader(signature).payload.voucher);
+      } catch {
+        return { paid: false, status: 400, headers: {}, body: { error: "Malformed PAYMENT-SIGNATURE" } };
+      }
+    }
+    const result = await check(voucherHeader);
+    if (result.paid) return { paid: true, status: 200, headers: { [PAYMENT_RESPONSE]: encodeHeader(settlementResponse(chainId, result.payer)) } };
+    const required = paymentRequired({ url, chainId, token: deps.token, provider: options.provider, price, channels: deps.channels, decimals: TOKEN_DECIMALS, error: result.body.reason ?? "PAYMENT-SIGNATURE header is required" });
+    return { paid: false, status: 402, headers: { [PAYMENT_REQUIRED]: encodeHeader(required) }, body: result.body };
   }
 
   return {
     check,
+    handle,
     /** Express / Connect middleware. */
     express: () => async (req: any, res: any, next: (error?: unknown) => void) => {
       try {
-        const result = await check(req.headers[VOUCHER_HEADER]);
+        const result = await handle(req.headers, req.originalUrl ?? req.url);
+        for (const [name, value] of Object.entries(result.headers)) res.setHeader(name, value);
         if (result.paid) return next();
-        res.status(402).json(result.body);
+        res.status(result.status).json(result.body);
       } catch (error) {
         next(error);
       }
     },
     /** Fastify preHandler hook. */
     fastify: () => async (request: any, reply: any) => {
-      const result = await check(request.headers[VOUCHER_HEADER]);
-      if (!result.paid) return reply.code(402).send(result.body);
+      const result = await handle(request.headers, request.url);
+      for (const [name, value] of Object.entries(result.headers)) reply.header(name, value);
+      if (!result.paid) return reply.code(result.status).send(result.body);
     },
   };
 }
