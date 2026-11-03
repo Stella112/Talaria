@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseCommand, understand } from "../src/parser";
+import { anthropicParser } from "../src/anthropic";
+import { RateLimiter } from "../src/limits";
 import { buildAgent } from "../src/server";
 
 const A = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
@@ -84,5 +86,83 @@ describe("agent API", () => {
     const app = buildAgent(talaria);
     const res = await app.inject({ method: "POST", url: "/execute", payload: { action: { action: "get_balance", privateKey: "0x1" } } });
     expect(res.statusCode).toBe(400);
+  });
+});
+
+describe("hosted agent", () => {
+  const COFFEE = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
+  const fresh = () => ({ parse: new RateLimiter(100, 1000), execute: new RateLimiter(100, 1000) });
+
+  function setup(limits = fresh()) {
+    const agent = { account: { address: "0x99199ce7FcdD889Fc023bE2936d6cf4D8cb9Ff50" }, payWithMandate: vi.fn(async () => ({ txHash: "0xabc", paymentId: "4" })), getTrust: vi.fn(async () => ({ score: 90, tier: "trusted" })) } as any;
+    const buyer = { createMandate: vi.fn(async () => ({ mandate: {} })), dispute: vi.fn(async () => "0xdef") } as any;
+    const rate = vi.fn(async () => "0xfeed");
+    const app = buildAgent(agent, undefined, undefined, { hosted: { buyer, merchants: { "trusted coffee": COFFEE as any } }, card: { name: "Talaria Autopilot" }, rate, limits });
+    return { app, agent, buyer, rate };
+  }
+
+  it.each([
+    ["buy 2 tusd from Trusted Coffee", { action: "buy", amount: "2", merchant: "trusted coffee" }],
+    ["buy $2.50 from new shop", { action: "buy", amount: "2.50", merchant: "new shop" }],
+    ["dispute payment 4", { action: "dispute_payment", paymentId: "4" }],
+    ["show trust of new shop", { action: "get_trust", merchant: "new shop" }],
+  ])("parses %s", (text, expected) => expect(parseCommand(text)).toEqual(expected));
+
+  it("buys only from allowed merchants, under a one-use mandate", async () => {
+    const { app, agent, buyer } = setup();
+    const ok = await app.inject({ method: "POST", url: "/execute", payload: { action: { action: "buy", merchant: "Trusted Coffee", amount: "2" }, confirmed: true } });
+    expect(ok.json().result.paymentId).toBe("4");
+    expect(buyer.createMandate).toHaveBeenCalledWith(expect.objectContaining({ payees: [COFFEE], maxAmount: "2", maxUses: 1 }));
+    const bad = await app.inject({ method: "POST", url: "/execute", payload: { action: { action: "buy", merchant: "someone else", amount: "2" }, confirmed: true } });
+    expect(bad.statusCode).toBe(400);
+    expect(agent.payWithMandate).toHaveBeenCalledTimes(1);
+  });
+
+  it("limits actions per address but not reads", async () => {
+    const { app } = setup({ parse: new RateLimiter(100, 1000), execute: new RateLimiter(1, 100000) });
+    const buy = { action: { action: "dispute_payment", paymentId: "1" }, confirmed: true };
+    expect((await app.inject({ method: "POST", url: "/execute", payload: buy })).statusCode).toBe(200);
+    expect((await app.inject({ method: "POST", url: "/execute", payload: buy })).statusCode).toBe(429);
+    expect((await app.inject({ method: "POST", url: "/execute", remoteAddress: "10.0.0.9", payload: buy })).statusCode).toBe(200);
+    const read = { action: { action: "get_trust", merchant: "trusted coffee" } };
+    expect((await app.inject({ method: "POST", url: "/execute", payload: read })).statusCode).toBe(200);
+  });
+
+  it("serves its card and takes one labeled rating per job", async () => {
+    const { app, rate } = setup();
+    expect((await app.inject({ url: "/.well-known/agent-card.json" })).json().name).toBe("Talaria Autopilot");
+    const payload = { paymentId: "4", stars: 5 };
+    expect((await app.inject({ method: "POST", url: "/rate", payload })).json()).toEqual({ baseTx: "0xfeed", label: "demo-client feedback" });
+    expect((await app.inject({ method: "POST", url: "/rate", payload })).statusCode).toBe(409);
+    expect((await app.inject({ method: "POST", url: "/rate", payload: { paymentId: "4", stars: 9 } })).statusCode).toBe(400);
+    expect(rate).toHaveBeenCalledTimes(1);
+  });
+
+  it("resets the limit after its window", () => {
+    let time = 0;
+    const limiter = new RateLimiter(1, 100, () => time);
+    expect(limiter.allow("a")).toBe(true);
+    expect(limiter.allow("a")).toBe(false);
+    time = 100;
+    expect(limiter.allow("a")).toBe(true);
+  });
+});
+
+describe("Anthropic parser (stubbed client)", () => {
+  const reply = (over: object) => ({ beta: { messages: { create: vi.fn(async () => ({ stop_reason: "end_turn", content: [{ type: "text", text: '{"action":"get_balance"}' }], ...over })) } } }) as any;
+
+  it("accepts schema-valid JSON and asks for the default model", async () => {
+    const client = reply({});
+    expect(await anthropicParser(client)("balance please")).toEqual({ action: "get_balance" });
+    expect(client.beta.messages.create.mock.calls[0][0].model).toBe("claude-opus-5-5");
+  });
+
+  it.each([
+    [{ stop_reason: "refusal", content: [] }],
+    [{ content: [{ type: "text", text: "not json" }] }],
+    [{ content: [{ type: "text", text: '{"action":"get_balance","privateKey":"0x1"}' }] }],
+    [{ content: [] }],
+  ])("returns null for %j", async (over) => {
+    expect(await anthropicParser(reply(over))("x")).toBeNull();
   });
 });

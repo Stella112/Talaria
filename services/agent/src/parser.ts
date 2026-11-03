@@ -25,6 +25,9 @@ const rules: Rule[] = [
   ],
   [new RegExp(String.raw`^(?:send|remit)\s+\$?${AMOUNT}${UNIT}\s+to\s+${ADDRESS}$`, "i"), (m) => ({ action: "send_remit", amount: m[1], to: m[2] })],
   [new RegExp(String.raw`^(?:send|remit)\s+\$?${AMOUNT}${UNIT}\s+(?:as|by|via|with)\s+(?:a\s+)?(?:claim\s+)?(?:link|code)$`, "i"), (m) => ({ action: "send_remit", amount: m[1] })],
+  [new RegExp(String.raw`^(?:buy|purchase|pay)\s+\$?${AMOUNT}${UNIT}\s+(?:from|at|to)\s+([a-z][a-z0-9 ]{0,49})$`, "i"), (m) => ({ action: "buy", amount: m[1], merchant: m[2].toLowerCase() })],
+  [new RegExp(String.raw`^dispute\s+(?:payment\s+)?#?(\d+)$`, "i"), (m) => ({ action: "dispute_payment", paymentId: m[1] })],
+  [/^(?:show\s+|what(?:'s| is)\s+)?(?:the\s+)?(?:trust|reputation)\s+(?:of|for|score of)\s+([a-z][a-z0-9 ]{0,49})\??$/i, (m) => ({ action: "get_trust", merchant: m[1].toLowerCase() })],
   [/^(?:show\s+|what(?:'s| is)\s+)?(?:my\s+)?balance\??$/i, () => ({ action: "get_balance" })],
   [/^(?:show\s+|list\s+)?(?:my\s+)?receipts$/i, () => ({ action: "get_receipts" })],
   [/^(?:show\s+|what(?:'s| is)\s+)?(?:my\s+)?(?:policy|limits?)\??$/i, () => ({ action: "get_policy" })],
@@ -42,11 +45,11 @@ export function parseCommand(command: string): Action | null {
 
 export type Llm = { baseUrl: string; apiKey: string; model: string };
 
-const SYSTEM = `Turn the user's payment command into one JSON object and output nothing else.
+export const SYSTEM = `Turn the user's payment command into one JSON object and output nothing else.
 Allowed actions and fields:
 create_checkout{amount,memo?} pay_invoice{invoiceId} subscribe{planId} cancel_subscription{subId}
 start_stream{to,ratePerMonth,deposit} stop_stream{streamId} paid_fetch{url,maxPrice,channelDeposit?}
-send_remit{to?,amount} get_balance{} get_receipts{} get_policy{}
+send_remit{to?,amount} buy{merchant,amount} dispute_payment{paymentId} get_trust{merchant} get_balance{} get_receipts{} get_policy{}
 Include the "action" field. Amounts are decimal strings in tUSD, ids are digit strings, addresses are 0x hex.
 Never invent an amount, id or address: if one is missing, output {"action":"unknown"}.`;
 
@@ -69,12 +72,12 @@ export async function parseWithLlm(command: string, llm: Llm, fetchImpl: typeof 
 }
 
 /** Rules first, so the demo never depends on an LLM. */
-export async function understand(command: string, llm?: Llm, fetchImpl?: typeof fetch): Promise<{ action: Action; source: "rules" | "llm" } | null> {
+export async function understand(command: string, llm?: Llm | ((command: string) => Promise<Action | null>), fetchImpl?: typeof fetch): Promise<{ action: Action; source: "rules" | "llm" } | null> {
   const ruled = parseCommand(command);
   if (ruled) return { action: ruled, source: "rules" };
   if (!llm) return null;
   try {
-    const action = await parseWithLlm(command, llm, fetchImpl);
+    const action = typeof llm === "function" ? await llm(command) : await parseWithLlm(command, llm, fetchImpl);
     return action ? { action, source: "llm" } : null;
   } catch {
     return null;

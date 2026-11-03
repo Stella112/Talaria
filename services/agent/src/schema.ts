@@ -14,6 +14,9 @@ export const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("stop_stream"), streamId: id }).strict(),
   z.object({ action: z.literal("paid_fetch"), url: z.string().url(), maxPrice: amount, channelDeposit: amount.optional() }).strict(),
   z.object({ action: z.literal("send_remit"), to: address.optional(), amount }).strict(),
+  z.object({ action: z.literal("buy"), merchant: z.string().min(1).max(50), amount }).strict(),
+  z.object({ action: z.literal("dispute_payment"), paymentId: id }).strict(),
+  z.object({ action: z.literal("get_trust"), merchant: z.string().min(1).max(50) }).strict(),
   z.object({ action: z.literal("get_balance") }).strict(),
   z.object({ action: z.literal("get_receipts") }).strict(),
   z.object({ action: z.literal("get_policy") }).strict(),
@@ -40,6 +43,12 @@ export function preview(action: Action): string {
       return `Fetch ${action.url}, paying at most ${action.maxPrice} tUSD per call`;
     case "send_remit":
       return action.to ? `Send ${action.amount} tUSD to ${action.to}` : `Send ${action.amount} tUSD as a claim link`;
+    case "buy":
+      return `Buy ${action.amount} tUSD from ${action.merchant} under a one-use mandate. A new merchant's payment is held so it can be disputed.`;
+    case "dispute_payment":
+      return `Dispute payment #${action.paymentId}, freezing the funds until the arbiter decides`;
+    case "get_trust":
+      return `Show the reputation of ${action.merchant}`;
     case "get_balance":
       return "Show the account balance";
     case "get_receipts":
