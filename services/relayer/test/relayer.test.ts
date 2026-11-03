@@ -2,7 +2,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { SpendLimitError, type Chain } from "../src/chain";
 import { buildServer } from "../src/server";
+import { Db } from "../src/db";
 import { Store } from "../src/store";
+import { Webhooks } from "../src/webhooks";
 import { pollBridge, runKeeper, settleVouchers } from "../src/workers";
 
 const TX = (n: number) => `0x${n.toString(16).padStart(64, "0")}` as `0x${string}`;
@@ -160,5 +162,48 @@ describe("HTTP API", () => {
     expect(ok.json().queued).toBe(true);
     const bad = await app.inject({ method: "POST", url: "/vouchers", payload: { channelId: "x" } });
     expect(bad.statusCode).toBe(400);
+  });
+});
+
+describe("Idempotency-Key", () => {
+  const body = {
+    intent: { rail: 1, owner: ADDR, signer: ADDR, payee: ADDR, amount: "5", ref: TX(1), nonce: "0", deadline: "99" },
+    v: 27,
+    r: TX(2),
+    s: TX(3),
+  };
+
+  it("replays the stored response, and conflicts on a different body", async () => {
+    const chain = fake();
+    const app = buildServer(chain, new Store(), { db: new Db() });
+    const headers = { "idempotency-key": "abc" };
+    const first = await app.inject({ method: "POST", url: "/intents", headers, payload: body });
+    const second = await app.inject({ method: "POST", url: "/intents", headers, payload: body });
+    expect(second.json()).toEqual(first.json());
+    expect(chain.execute).toHaveBeenCalledTimes(1);
+    const other = await app.inject({ method: "POST", url: "/intents", headers, payload: { ...body, v: 28 } });
+    expect(other.statusCode).toBe(409);
+    expect(chain.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not store a failure, so the same key can retry", async () => {
+    let calls = 0;
+    const chain = fake({ execute: vi.fn(async () => { if (++calls === 1) throw new Error("revert"); return TX(9); }) });
+    const app = buildServer(chain, new Store(), { db: new Db() });
+    const headers = { "idempotency-key": "abc" };
+    expect((await app.inject({ method: "POST", url: "/intents", headers, payload: body })).statusCode).toBe(400);
+    expect((await app.inject({ method: "POST", url: "/intents", headers, payload: body })).json().txHash).toBe(TX(9));
+  });
+});
+
+describe("webhook routes", () => {
+  it("registers once with a secret, and refuses private URLs", async () => {
+    const db = new Db();
+    const app = buildServer(fake(), new Store(), { db, webhooks: new Webhooks(db) });
+    const ok = await app.inject({ method: "POST", url: "/webhooks", payload: { merchant: ADDR, url: "https://merchant.example/hook" } });
+    expect(ok.json().secret).toMatch(/^whsec_/);
+    const bad = await app.inject({ method: "POST", url: "/webhooks", payload: { merchant: ADDR, url: "http://169.254.169.254/" } });
+    expect(bad.statusCode).toBe(400);
+    expect((await app.inject({ url: `/webhooks/${ADDR}/deliveries` })).json().deliveries).toEqual([]);
   });
 });
