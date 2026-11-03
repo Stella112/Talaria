@@ -8,9 +8,9 @@ import { rpc } from "./lib/rpc";
 
 loadEnv({ path: resolve(__dirname, "../../.env") });
 
-// UNVERIFIED on our own deployment: PortalNexus figures from CLAUDE.md 5.4, recalibrated in Phase 1.
-const TPOT_PER_BYTE = 0.0589;
-const TPOT_PER_CONTRACT = 18.32;
+// Calibrated from our TalariaUSD deployment: 3018 bytes cost 252.69 tPOT in total (see evidence/).
+const TPOT_PER_BYTE = 252.69 / 3018;
+const TPOT_PER_CONTRACT = 0;
 
 const EVM_RPC = process.env.PORTALDOT_EVM_RPC || "https://test-evm-rpc-v3.portaldot.dev";
 const deployer = process.env.DEPLOYER_H160 as `0x${string}` | undefined;

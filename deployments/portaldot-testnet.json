@@ -1,0 +1,17 @@
+[
+  {
+    "name": "TalariaUSD",
+    "address": "0x44bc5dcfba3f36fb03623a27e553cdbb0b8877f0",
+    "deployTxHash": "0xd8e98c3e75d7e3f4687b3149d59da74641538b6ee07658d6bb1af65772771d38",
+    "blockNumber": "305113",
+    "runtimeBytecodeBytes": 3018,
+    "depositEstimateTPOT": 196.0802,
+    "depositActualTPOT": null,
+    "totalBalanceChangeTPOT": "252.692811805227443445",
+    "gasUsed": "10838207669106903",
+    "effectiveGasPrice": "23315",
+    "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "timestampUTC": "2026-11-03T10:57:17.558Z",
+    "gitCommit": "ba86728fbdc48e56e7eca76fb5769087b48f26c6"
+  }
+]
