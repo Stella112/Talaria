@@ -3,7 +3,7 @@ const { existsSync, readFileSync, writeFileSync } = require("node:fs");
 const { resolve } = require("node:path");
 
 const root = resolve(__dirname, "../..");
-const names = ["TalariaUSD", "TalariaCore", "TalariaSubscriptions", "TalariaStreams", "TalariaChannels", "TalariaRemit", "MockUSDC", "TalariaLockbox"];
+const names = ["TalariaUSD", "TalariaCore", "TalariaSubscriptions", "TalariaStreams", "TalariaChannels", "TalariaRemit", "MockUSDC", "TalariaLockbox", "TalariaLockboxV2", "TalariaProtect", "TalariaBridgeOut"];
 const abi = (n) => JSON.parse(readFileSync(resolve(__dirname, `../artifacts/contracts/${n}.sol/${n}.json`), "utf8")).abi;
 const records = (f) => {
   const file = resolve(root, "deployments", f);

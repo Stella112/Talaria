@@ -23,10 +23,15 @@ export const Rail = {
   sendRemit: 0x05,
   cancelRemit: 0x15,
   claimRemit: 0x25,
+  payProtected: 0x06,
+  dispute: 0x16,
+  refundProtected: 0x26,
+  revokeMandate: 0x36,
+  bridgeOut: 0x07,
 } as const;
 
 /** Bit values for a session key's allowed-rails mask. */
-export const RailBit = { account: 1, checkout: 2, subscriptions: 4, streams: 8, channels: 16, remit: 32 } as const;
+export const RailBit = { account: 1, checkout: 2, subscriptions: 4, streams: 8, channels: 16, remit: 32, protect: 64, bridgeOut: 128 } as const;
 
 export type Intent = {
   rail: number;

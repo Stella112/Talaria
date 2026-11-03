@@ -17,8 +17,50 @@ export class Db {
       CREATE TABLE IF NOT EXISTS feedback (outcome_key TEXT PRIMARY KEY, status TEXT NOT NULL, tx_hash TEXT);
       CREATE TABLE IF NOT EXISTS webhooks (merchant TEXT PRIMARY KEY, url TEXT NOT NULL, secret TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS deliveries (id INTEGER PRIMARY KEY AUTOINCREMENT, event_id TEXT NOT NULL, merchant TEXT NOT NULL, type TEXT NOT NULL, attempts INTEGER NOT NULL, status TEXT NOT NULL, last_error TEXT);
+      CREATE TABLE IF NOT EXISTS cursors (name TEXT PRIMARY KEY, block TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS bridge_out (id TEXT PRIMARY KEY, status TEXT NOT NULL, source_tx TEXT NOT NULL, dest_tx TEXT);
+      CREATE TABLE IF NOT EXISTS holds (id TEXT PRIMARY KEY, release_at INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS payment_agents (id TEXT PRIMARY KEY, agent TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS idempotency (key TEXT PRIMARY KEY, body_hash TEXT NOT NULL, status INTEGER NOT NULL, response TEXT NOT NULL);
     `);
+  }
+
+  cursor(name: string): bigint | null {
+    const row = this.db.prepare("SELECT block FROM cursors WHERE name = ?").get(name) as { block: string } | undefined;
+    return row ? BigInt(row.block) : null;
+  }
+
+  setCursor(name: string, block: bigint) {
+    this.db.prepare("INSERT INTO cursors VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET block = excluded.block").run(name, block.toString());
+  }
+
+  bridgeOut(id: string) {
+    return this.db.prepare("SELECT status, source_tx, dest_tx FROM bridge_out WHERE id = ?").get(id) as { status: string; source_tx: string; dest_tx: string | null } | undefined;
+  }
+
+  setBridgeOut(id: string, status: "pending" | "completed", sourceTx: string, destTx?: string) {
+    this.db.prepare("INSERT INTO bridge_out VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET status = excluded.status, dest_tx = COALESCE(excluded.dest_tx, bridge_out.dest_tx)").run(id, status, sourceTx, destTx ?? null);
+  }
+
+  addHold(id: bigint, releaseAt: number) {
+    this.db.prepare("INSERT OR IGNORE INTO holds VALUES (?, ?)").run(id.toString(), releaseAt);
+  }
+
+  removeHold(id: bigint) {
+    this.db.prepare("DELETE FROM holds WHERE id = ?").run(id.toString());
+  }
+
+  dueHolds(now: number): bigint[] {
+    return (this.db.prepare("SELECT id FROM holds WHERE release_at <= ? ORDER BY release_at").all(now) as { id: string }[]).map((row) => BigInt(row.id));
+  }
+
+  setPaymentAgent(id: bigint, agent: string) {
+    this.db.prepare("INSERT OR REPLACE INTO payment_agents VALUES (?, ?)").run(id.toString(), agent.toLowerCase());
+  }
+
+  agentOfPayment(id: bigint): string | null {
+    const row = this.db.prepare("SELECT agent FROM payment_agents WHERE id = ?").get(id.toString()) as { agent: string } | undefined;
+    return row?.agent ?? null;
   }
 
   linkIdentity(subject: string, agentId: bigint, owner: string, signature: string) {

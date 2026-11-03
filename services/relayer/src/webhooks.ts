@@ -23,6 +23,8 @@ const BASE_DELAY_MS = 1_000;
 
 export const signWebhook = (secret: string, timestamp: number, body: string) => createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
 
+export const webhookRegistrationMessage = (merchant: string, url: string, timestamp: number) => `Register Talaria webhook ${url} for ${merchant.toLowerCase()} at ${timestamp}`;
+
 /** Blocks URLs that would point the relayer at itself or a private network. */
 export function isAllowedWebhookUrl(raw: string, allowLocal = false): boolean {
   let url: URL;

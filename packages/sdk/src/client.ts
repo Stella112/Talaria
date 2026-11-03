@@ -14,8 +14,10 @@ import {
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { portaldotClient, retryTransport } from "./chain";
 import {
+  TalariaBridgeOutAbi,
   TalariaChannelsAbi,
   TalariaCoreAbi,
+  TalariaProtectAbi,
   TalariaRemitAbi,
   TalariaStreamsAbi,
   TalariaSubscriptionsAbi,
@@ -23,9 +25,11 @@ import {
   portaldotDeployments,
 } from "./generated";
 import { Rail, signIntent, toRef, toUnits, ZERO_ADDRESS, ZERO_REF, type Intent, type SignedIntent } from "./intents";
+import { mandateHash, payeesHash, signProtect, type Checkout, type Mandate, type Sig, type SignedMandate } from "./mandates";
 import { createPaidFetch, type PaidFetchOptions } from "./fetch";
 import { createPaywall, type PaywallOptions } from "./paywall";
 import * as utils from "./utils/address";
+import { paymentStatus } from "./webhooks";
 
 export type Addresses = {
   token: Address;
@@ -34,6 +38,8 @@ export type Addresses = {
   streams?: Address;
   channels?: Address;
   remit?: Address;
+  protect?: Address;
+  bridgeOut?: Address;
 };
 
 export type TalariaConfig = {
@@ -49,6 +55,7 @@ export type TalariaConfig = {
   walletClient?: WalletClient;
   /** Replaces relayer and wallet routes, for example in tests. */
   submitIntent?: (signed: SignedIntent) => Promise<Hex>;
+  submitProtected?: (path: string, body: unknown) => Promise<any>;
   addresses?: Partial<Addresses>;
   /** Seconds a signed intent stays valid. */
   intentTtl?: number;
@@ -81,6 +88,8 @@ export class Talaria {
       streams: portaldotDeployments.TalariaStreams,
       channels: portaldotDeployments.TalariaChannels,
       remit: portaldotDeployments.TalariaRemit,
+      protect: portaldotDeployments.TalariaProtect,
+      bridgeOut: portaldotDeployments.TalariaBridgeOut,
       ...config.addresses,
     };
   }
@@ -94,7 +103,7 @@ export class Talaria {
     return this.config.owner ?? this.account.address;
   }
 
-  private rail(name: "subscriptions" | "streams" | "channels" | "remit"): Address {
+  private rail(name: "subscriptions" | "streams" | "channels" | "remit" | "protect" | "bridgeOut"): Address {
     const address = this.addresses[name];
     if (!address) throw new RailNotDeployedError(name);
     return address;
@@ -102,6 +111,10 @@ export class Talaria {
 
   /** Signs an intent and submits it through the configured route. */
   async intent(input: { rail: number; payee?: Address; amount?: bigint; ref?: Hex; deadline?: bigint }): Promise<Hex> {
+    return this.submit(await this.signedIntent(input));
+  }
+
+  private async signedIntent(input: { rail: number; payee?: Address; amount?: bigint; ref?: Hex; deadline?: bigint }): Promise<SignedIntent> {
     const nonce = (await this.client.readContract({
       address: this.addresses.core,
       abi: TalariaCoreAbi,
@@ -119,8 +132,7 @@ export class Talaria {
       nonce,
       deadline: input.deadline ?? BigInt(Math.floor(Date.now() / 1000)) + ttl,
     };
-    const signed = await signIntent(this.account, this.addresses.core, await this.client.getChainId(), intent);
-    return this.submit(signed);
+    return signIntent(this.account, this.addresses.core, await this.client.getChainId(), intent);
   }
 
   private async submit(signed: SignedIntent): Promise<Hex> {
@@ -321,6 +333,111 @@ export class Talaria {
     );
     const { r, s, v } = parseSignature(await privateKeyToAccount(code).sign({ hash }));
     return this.direct(address, encodeFunctionData({ abi: TalariaRemitAbi, functionName: "claimWithCode", args: [id, receiver, Number(v), r, s] }));
+  }
+
+  // Trust-priced settlement
+
+  private async relayerGet<T>(path: string): Promise<T> {
+    if (!this.config.relayerUrl) throw new Error("This action needs a relayerUrl");
+    const response = await fetch(`${this.config.relayerUrl}${path}`);
+    const json = (await response.json()) as T & { error?: string };
+    if (!response.ok) throw new Error(json.error ?? `Relayer ${response.status}`);
+    return json;
+  }
+
+  private async relayerPost(path: string, body: unknown): Promise<any> {
+    if (this.config.submitProtected) return this.config.submitProtected(path, body);
+    const response = await fetch(`${this.config.relayerUrl}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body, (_, value) => (typeof value === "bigint" ? value.toString() : value)),
+    });
+    const json = (await response.json()) as { error?: string };
+    if (!response.ok) throw new Error(`Relayer ${response.status}: ${json.error ?? "request failed"}`);
+    return json;
+  }
+
+  /** A subject's reputation as the relayer reads it from Base. */
+  getTrust(subject: Address) {
+    return this.relayerGet<{ subject: Address; agentId: string | null; score: number; feedbackCount: number; tier: "trusted" | "established" | "new"; srcChainId: string; srcBlock: string | null }>(`/trust/${subject}`);
+  }
+
+  /** Links an ERC-8004 agent to this address. `account` must be the wallet that owns the agent. */
+  async linkIdentity(subject: Address, agentId: bigint) {
+    const message = `Link ERC-8004 agent ${agentId} on Base Sepolia to Portaldot address ${subject.toLowerCase()} for Talaria`;
+    return this.relayerPost("/identity/link", { subject, agentId, signature: await this.account.signMessage({ message }) });
+  }
+
+  /** Pays a merchant under buyer protection. The relayer attaches the merchant's attestation. */
+  async payProtected(input: { merchant: Address; amount: string | number | bigint; ref?: Hex }): Promise<Hex> {
+    this.rail("protect");
+    const signed = await this.signedIntent({ rail: Rail.payProtected, payee: input.merchant, amount: toUnits(input.amount), ref: input.ref });
+    return (await this.relayerPost("/protected", signed)).txHash;
+  }
+
+  async getPayment(id: bigint) {
+    const [buyer, amount, refunded, merchant, releaseAt, stored] = (await this.client.readContract({ address: this.rail("protect"), abi: TalariaProtectAbi, functionName: "payments", args: [id] })) as unknown as readonly [Address, number | bigint, number | bigint, Address, number, number];
+    return { buyer, amount: BigInt(amount), refunded: BigInt(refunded), merchant, releaseAt, status: paymentStatus(stored, BigInt(refunded)) };
+  }
+
+  /** Disputes a held payment. A gasless dispute cannot carry a reason hash. */
+  async dispute(id: bigint): Promise<Hex> {
+    return this.intent({ rail: Rail.dispute, payee: (await this.getPayment(id)).merchant, ref: toRef(id) });
+  }
+
+  async refundProtected(id: bigint, amount: string | number | bigint): Promise<Hex> {
+    return this.intent({ rail: Rail.refundProtected, payee: (await this.getPayment(id)).buyer, amount: toUnits(amount), ref: toRef(id) });
+  }
+
+  /** Builds and signs a mandate as its owner. Give the result to the agent. */
+  async createMandate(input: { agent: Address; payees: Address[]; minAmount?: string | number | bigint; maxAmount: string | number | bigint; expiresIn?: number; maxUses?: number; checkoutHash?: Hex }): Promise<SignedMandate> {
+    const mandate: Mandate = {
+      owner: this.owner,
+      agent: input.agent,
+      payeesHash: payeesHash(input.payees),
+      token: this.addresses.token,
+      minAmount: toUnits(input.minAmount ?? 0n),
+      maxAmount: toUnits(input.maxAmount),
+      expiry: BigInt(Math.floor(Date.now() / 1000) + (input.expiresIn ?? 1800)),
+      maxUses: input.maxUses ?? 1,
+      checkoutHash: input.checkoutHash ?? ZERO_REF,
+      nonce: BigInt(Date.now()),
+    };
+    const sig = await signProtect(this.account, this.rail("protect"), await this.client.getChainId(), "Mandate", mandate);
+    return { mandate, sig, payees: input.payees };
+  }
+
+  /** Pays under a mandate. `account` must be the mandate's agent key. */
+  async payWithMandate(signed: SignedMandate, input: { payee: Address; amount: string | number | bigint; ref?: Hex; use?: number; checkout?: Checkout; checkoutSig?: Sig }): Promise<{ txHash: Hex; paymentId: string | null }> {
+    const protect = this.rail("protect");
+    const chainId = await this.client.getChainId();
+    const amount = toUnits(input.amount);
+    const ref = input.ref ?? ZERO_REF;
+    const hash = mandateHash(signed.mandate);
+    const use = input.use ?? Number(await this.client.readContract({ address: protect, abi: TalariaProtectAbi, functionName: "mandateUses", args: [signed.mandate.owner, hash] }));
+    const agentSig = await signProtect(this.account, protect, chainId, "PaymentAuth", { mandateHash: hash, payee: input.payee, amount, ref, use });
+    return this.relayerPost("/mandates/pay", { mandate: signed.mandate, mandateSig: signed.sig, payees: signed.payees, payee: input.payee, amount, ref, agentSig, checkout: input.checkout, checkoutSig: input.checkoutSig });
+  }
+
+  revokeMandate(hash: Hex): Promise<Hex> {
+    this.rail("protect");
+    return this.intent({ rail: Rail.revokeMandate, ref: hash });
+  }
+
+  // Bridge-out
+
+  /** Sends tUSD back to a source chain. Session keys need the bridge rail allowed. */
+  async bridgeOut(input: { amount: string | number | bigint; destChainId: number; recipient: Address }): Promise<{ id: Hex; txHash: Hex }> {
+    this.rail("bridgeOut");
+    const txHash = await this.intent({ rail: Rail.bridgeOut, payee: input.recipient, amount: toUnits(input.amount), ref: toRef(BigInt(input.destChainId)) });
+    const receipt = await this.client.waitForTransactionReceipt({ hash: txHash, timeout: 180_000 });
+    const [log] = parseEventLogs({ abi: TalariaBridgeOutAbi as any, logs: receipt.logs, eventName: "BridgeOut" }) as any[];
+    if (!log) throw new Error(`BridgeOut not found in ${txHash}: the intent may be queued for approval`);
+    return { id: log.args.id, txHash };
+  }
+
+  getBridgeStatus(id: Hex) {
+    return this.relayerGet<{ status: "pending" | "completed"; sourceTx: Hex; destTx: Hex | null }>(`/bridge/${id}`);
   }
 
   // Session keys

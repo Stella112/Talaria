@@ -1,46 +1,88 @@
 import { baseSepoliaDeployments, portaldotClient, portaldotDeployments, portaldotTestnet, retryTransport } from "@talaria-pay/sdk";
 import { config as loadEnv } from "dotenv";
 import { resolve } from "node:path";
-import { createPublicClient, createWalletClient, type PublicClient } from "viem";
+import { createPublicClient, createWalletClient, type Hex, type PublicClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
-import { liveChain } from "./chain";
+import { liveChain, liveSettlement } from "./chain";
+import { sourceChains } from "./config";
+import { Db } from "./db";
 import { buildServer } from "./server";
+import { pollBridgeOut, pollOutcomes, runReleaseKeeper } from "./settlement";
 import { Store } from "./store";
+import { liveFeedbackWriter, TrustService } from "./trust";
+import { Webhooks } from "./webhooks";
 import { loop, pollBridge, runKeeper, settleVouchers } from "./workers";
 
-loadEnv({ path: resolve(__dirname, "../../../.env") });
+loadEnv({ path: resolve(__dirname, "../../../.env"), quiet: true });
 
+const toAccount = (key: string) => privateKeyToAccount((key.startsWith("0x") ? key : `0x${key}`) as Hex);
 const key = process.env.RELAYER_PRIVATE_KEY;
 if (!key) throw new Error("RELAYER_PRIVATE_KEY is not set");
-const account = privateKeyToAccount((key.startsWith("0x") ? key : `0x${key}`) as `0x${string}`);
-const rpc = process.env.PORTALDOT_EVM_RPC;
+const account = toAccount(key);
+const rpc = process.env.PORTALDOT_EVM_RPC || portaldotTestnet.rpcUrls.default.http[0];
 const live = process.env.RELAYER_LIVE === "1";
+const maxTxPerHour = Number(process.env.RELAYER_MAX_TX_PER_HOUR || 20);
 
 const store = new Store(resolve(__dirname, "../data/state.json"));
+const db = new Db(resolve(__dirname, "../data/talaria.sqlite"));
+const webhooks = new Webhooks(db);
+const portaldot = portaldotClient(rpc);
+const wallet = createWalletClient({ account, chain: portaldotTestnet, transport: retryTransport(rpc) });
+const deployed = { ...baseSepoliaDeployments };
+const [source] = sourceChains(process.env, deployed);
+const base = createPublicClient({ chain: baseSepolia, transport: retryTransport(source.rpc) }) as PublicClient;
+const baseWallet = createWalletClient({ account, chain: baseSepolia, transport: retryTransport(source.rpc) });
+
+const common = { portaldot, wallet, core: portaldotDeployments.TalariaCore, store, maxTxPerHour, live };
 const chain = liveChain({
-  portaldot: portaldotClient(rpc),
-  base: createPublicClient({ chain: baseSepolia, transport: retryTransport(process.env.BASE_SEPOLIA_RPC || "https://sepolia.base.org") }) as PublicClient,
-  wallet: createWalletClient({ account, chain: portaldotTestnet, transport: retryTransport(rpc || portaldotTestnet.rpcUrls.default.http[0]) }),
-  core: portaldotDeployments.TalariaCore,
-  lockbox: baseSepoliaDeployments.TalariaLockbox,
+  ...common,
+  base,
+  lockbox: source.lockbox,
   subscriptions: portaldotDeployments.TalariaSubscriptions,
   channels: portaldotDeployments.TalariaChannels,
-  srcChainId: BigInt(baseSepolia.id),
-  store,
-  maxTxPerHour: Number(process.env.RELAYER_MAX_TX_PER_HOUR || 20),
-  live,
+  srcChainId: BigInt(source.chainId),
 });
+
+const protect = portaldotDeployments.TalariaProtect;
+const bridgeOut = portaldotDeployments.TalariaBridgeOut;
+const v2 = deployed.TalariaLockboxV2;
+const settlement = liveSettlement({
+  ...common,
+  protect,
+  bridgeOut,
+  destinations: new Map(v2 ? [[BigInt(source.chainId), { client: base, wallet: baseWallet, lockbox: v2 }]] : []),
+});
+
+const trust =
+  protect && process.env.ATTESTER_PRIVATE_KEY && process.env.SETTLEMENT_PRIVATE_KEY
+    ? new TrustService({
+        base,
+        db,
+        attester: toAccount(process.env.ATTESTER_PRIVATE_KEY),
+        settlementClient: toAccount(process.env.SETTLEMENT_PRIVATE_KEY).address,
+        protect,
+        portaldotChainId: portaldotTestnet.id,
+        srcChainId: BigInt(source.chainId),
+      })
+    : undefined;
 
 console.log(`[relayer] ${account.address} ${live ? "LIVE: writes spend tPOT" : "READ-ONLY: writes are refused"}`);
 
-if (baseSepoliaDeployments.TalariaLockbox) {
-  const startBlock = BigInt(process.env.BRIDGE_START_BLOCK || 0);
-  loop("bridge", 15_000, () => pollBridge(chain, store, startBlock));
-}
+const startBlock = BigInt(process.env.BRIDGE_START_BLOCK || 0);
+if (source.lockbox) loop("bridge", 15_000, () => pollBridge(chain, store, startBlock));
 if (portaldotDeployments.TalariaSubscriptions) loop("keeper", 60_000, () => runKeeper(chain));
 if (portaldotDeployments.TalariaChannels) loop("settler", 60_000, () => settleVouchers(chain, store));
 
-buildServer(chain, store)
+const settlementStart = BigInt(process.env.SETTLEMENT_START_BLOCK || 0);
+if (bridgeOut && v2) loop("bridge-out", 15_000, () => pollBridgeOut(settlement, db, settlementStart, webhooks));
+if (protect && process.env.SETTLEMENT_PRIVATE_KEY) {
+  const settlementWallet = createWalletClient({ account: toAccount(process.env.SETTLEMENT_PRIVATE_KEY), chain: baseSepolia, transport: retryTransport(source.rpc) });
+  const write = liveFeedbackWriter(base, settlementWallet, live);
+  loop("outcomes", 15_000, () => pollOutcomes(settlement, db, settlementStart, write, portaldotTestnet.id, webhooks));
+  loop("release", 30_000, () => runReleaseKeeper(settlement, db));
+}
+
+buildServer(chain, store, { db, trust, webhooks, protect: protect ? settlement : undefined })
   .listen({ port: Number(process.env.RELAYER_PORT || 8787), host: "0.0.0.0" })
   .then((address) => console.log(`[relayer] listening on ${address}`));

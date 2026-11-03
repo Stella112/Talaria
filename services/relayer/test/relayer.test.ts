@@ -197,12 +197,12 @@ describe("Idempotency-Key", () => {
 });
 
 describe("webhook routes", () => {
-  it("registers once with a secret, and refuses private URLs", async () => {
+  it("refuses expired registrations and private URLs", async () => {
     const db = new Db();
     const app = buildServer(fake(), new Store(), { db, webhooks: new Webhooks(db) });
-    const ok = await app.inject({ method: "POST", url: "/webhooks", payload: { merchant: ADDR, url: "https://merchant.example/hook" } });
-    expect(ok.json().secret).toMatch(/^whsec_/);
-    const bad = await app.inject({ method: "POST", url: "/webhooks", payload: { merchant: ADDR, url: "http://169.254.169.254/" } });
+    const ok = await app.inject({ method: "POST", url: "/webhooks", payload: { merchant: ADDR, url: "https://merchant.example/hook", timestamp: 1, signature: "0x12" } });
+    expect(ok.statusCode).toBe(400); // expired; signed registration is covered in settlement.test.ts
+    const bad = await app.inject({ method: "POST", url: "/webhooks", payload: { merchant: ADDR, url: "http://169.254.169.254/", timestamp: 1, signature: "0x12" } });
     expect(bad.statusCode).toBe(400);
     expect((await app.inject({ url: `/webhooks/${ADDR}/deliveries` })).json().deliveries).toEqual([]);
   });
