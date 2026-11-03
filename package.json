@@ -7,7 +7,9 @@
   },
   "scripts": {
     "test": "pnpm -r test",
-    "probe": "pnpm --filter @talaria-pay/contracts probe"
+    "probe": "pnpm --filter @talaria-pay/contracts probe",
+    "demo:trust": "pnpm --filter @talaria-pay/contracts exec tsx scripts/demo-trust.ts",
+    "stats": "pnpm --filter @talaria-pay/contracts exec tsx scripts/stats.ts"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
