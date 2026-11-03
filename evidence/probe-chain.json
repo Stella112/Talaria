@@ -1,0 +1,187 @@
+{
+  "timestampUTC": "2026-11-03T10:27:57.674Z",
+  "endpoints": {
+    "EVM_RPC": "https://test-evm-rpc-v3.portaldot.dev",
+    "WS": "wss://test-node-v3.portaldot.dev"
+  },
+  "evm": {
+    "eth_chainId": {
+      "ok": true,
+      "result": "0x190f1ca9"
+    },
+    "eth_blockNumber": {
+      "ok": true,
+      "result": "0x4a6b4"
+    },
+    "web3_clientVersion": {
+      "ok": true,
+      "result": "eth-rpc/main-fddd431/x86_64-unknown-linux-gnu/rustc1.98.0"
+    },
+    "eth_gasPrice": {
+      "ok": true,
+      "result": "0x5b27"
+    },
+    "net_version": {
+      "ok": true,
+      "result": "420420777"
+    },
+    "eth_maxPriorityFeePerGas": {
+      "ok": true,
+      "result": "0x0"
+    },
+    "debug_traceCall": {
+      "ok": true,
+      "result": {
+        "from": "0x0000000000000000000000000000000000000000",
+        "gas": "0x0",
+        "gasUsed": "0x7acb272968",
+        "to": "0x0000000000000000000000000000000000000000",
+        "input": "0x",
+        "value": "0x0",
+        "type": "CALL"
+      }
+    }
+  },
+  "substrate": {
+    "chain": "PortaldotV3 Test",
+    "specName": "portaldot-v3",
+    "specVersion": 3002,
+    "tokenDecimals": [
+      14
+    ],
+    "tokenSymbol": [
+      "tPOT"
+    ],
+    "ss58Format": 42,
+    "latestBlock": 304822,
+    "finalizedBlock": 304820,
+    "measuredBlockTimeMs": 6000,
+    "existentialDeposit": "10000000000000",
+    "hasRevivePallet": true,
+    "reviveCalls": [
+      "ethTransact",
+      "call",
+      "instantiate",
+      "instantiateWithCode",
+      "ethInstantiateWithCode",
+      "ethCall",
+      "ethSubstrateCall",
+      "uploadCode",
+      "removeCode",
+      "setCode",
+      "mapAccount",
+      "batchMapAccounts",
+      "unmapAccount",
+      "dispatchAsFallbackAccount"
+    ],
+    "reviveStorage": [
+      "palletVersion",
+      "pristineCode",
+      "codeInfoOf",
+      "accountInfoOf",
+      "nativeDepositOf",
+      "immutableDataOf",
+      "deletionQueue",
+      "deletionQueueCounter",
+      "originalAccount",
+      "ethereumBlock",
+      "blockHash",
+      "receiptInfoData",
+      "ethBlockBuilderIR",
+      "ethBlockBuilderFirstValues",
+      "debugSettingsOf"
+    ],
+    "reviveConsts": {
+      "depositPerByte": "6000000000000",
+      "depositPerItem": "15000000000000",
+      "depositPerChildTrieItem": "150000000000",
+      "codeHashLockupDepositPercent": "300000000",
+      "allowEVMBytecode": "true",
+      "chainId": "420420777",
+      "nativeToEthRatio": "10000",
+      "maxEthExtrinsicWeight": "900000000000000000",
+      "debugEnabled": "false",
+      "autoMap": "true",
+      "gasScale": "5"
+    }
+  },
+  "mappedAccountSamples": [
+    {
+      "onChainH160": "0x000f13670270828c00fb680ae49f3e3125fe549a",
+      "derivedH160": "0x000F13670270828c00Fb680Ae49f3E3125fe549A",
+      "matches": true,
+      "balances": {
+        "h160": "0x000f13670270828c00fb680ae49f3e3125fe549a",
+        "account": "5D79T5i2jgLyjFNnBLjCyNJk6xPRoJkM8nEWAmSBQTaZmuPn",
+        "evmWei": "4051511605176500000",
+        "substrateFreePlanck": "415151160517650",
+        "substrateReservedPlanck": "0",
+        "wei_equals_free_times_1e4": false
+      }
+    },
+    {
+      "onChainH160": "0x0012d46c8d1ee9bc43461e8ba1d55b7198d84e21",
+      "derivedH160": "0x0012D46C8d1Ee9bC43461E8bA1d55b7198D84E21",
+      "matches": true,
+      "balances": {
+        "h160": "0x0012d46c8d1ee9bc43461e8ba1d55b7198d84e21",
+        "account": "5ERfbeJhpJM5QgR4v1tphJjnDsEQwoP6pnBR3TawCK2ziGQJ",
+        "evmWei": "2336777707616740000",
+        "substrateFreePlanck": "243677770761674",
+        "substrateReservedPlanck": "0",
+        "wei_equals_free_times_1e4": false
+      }
+    },
+    {
+      "onChainH160": "0x00308e6cd9fde23ceb67dcebdbcc8b956d258a58",
+      "derivedH160": "0x00308E6cD9fdE23ceb67DCEbdBcc8b956d258a58",
+      "matches": true,
+      "balances": {
+        "h160": "0x00308e6cd9fde23ceb67dcebdbcc8b956d258a58",
+        "account": "5Hg5ejBeLm53LV39yymm1BwAvSP1h1TAV7JmXxvP7EW4EmDR",
+        "evmWei": "1112816395217420000",
+        "substrateFreePlanck": "121281639521742",
+        "substrateReservedPlanck": "0",
+        "wei_equals_free_times_1e4": false
+      }
+    },
+    {
+      "onChainH160": "0x005566f5ceec8ec89c7a5040c1a6070c41773b82",
+      "derivedH160": "0x005566f5cEeC8EC89C7a5040C1A6070c41773b82",
+      "matches": true,
+      "balances": {
+        "h160": "0x005566f5ceec8ec89c7a5040c1a6070c41773b82",
+        "account": "5GhQEPPiZ8gSRmQycQUfydcejMAPo2zPjHQhkjBSFzYc2ogR",
+        "evmWei": "31653861358183850000",
+        "substrateFreePlanck": "3175386135818385",
+        "substrateReservedPlanck": "0",
+        "wei_equals_free_times_1e4": false
+      }
+    },
+    {
+      "onChainH160": "0x00a4a5b572f891025c83509e0d44b9cbbc02c291",
+      "derivedH160": "0x00A4A5B572f891025C83509e0D44b9CBbC02C291",
+      "matches": true,
+      "balances": {
+        "h160": "0x00a4a5b572f891025c83509e0d44b9cbbc02c291",
+        "account": "5HmYD3NyvhBGBGcjhfDPS4bCW2mFYP54KY874jSgHPE2Sf39",
+        "evmWei": "4122048561493780000",
+        "substrateFreePlanck": "422204856149378",
+        "substrateReservedPlanck": "0",
+        "wei_equals_free_times_1e4": false
+      }
+    }
+  ],
+  "deployerEvm": "DEPLOYER_H160 not set",
+  "nativeWallet": "NATIVE_SS58 not set",
+  "urls": [
+    {
+      "url": "https://node-console.portaldot.dev/",
+      "status": 200
+    },
+    {
+      "url": "https://scanner-testnet-v3.portaldot.dev",
+      "status": 200
+    }
+  ]
+}
