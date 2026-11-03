@@ -1,0 +1,22 @@
+[
+  {
+    "name": "MockUSDC",
+    "address": "0x44bc5dcfba3f36fb03623a27e553cdbb0b8877f0",
+    "deployTxHash": "0x49941b0e06991949e90b9949a99b40f3c28abba69f9587b46627fae0ba14a315",
+    "blockNumber": "53935614",
+    "runtimeBytecodeBytes": 1825,
+    "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "timestampUTC": "2026-11-03T12:29:54.230Z",
+    "gitCommit": "b8b69686c31f91f7d4b87ffabfc7beef2f220d03"
+  },
+  {
+    "name": "TalariaLockbox",
+    "address": "0x67e3e8d6185f2e57c60d63b81fc1376ff120b467",
+    "deployTxHash": "0x5a69a2b734e30c6ceb09ca26d4742b21e22667131daaaa1e5faa776ae68ad584",
+    "blockNumber": "53935635",
+    "runtimeBytecodeBytes": 1357,
+    "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "timestampUTC": "2026-11-03T12:29:58.322Z",
+    "gitCommit": "b8b69686c31f91f7d4b87ffabfc7beef2f220d03"
+  }
+]
