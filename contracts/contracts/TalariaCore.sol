@@ -92,7 +92,7 @@ contract TalariaCore is ReentrancyGuard {
     }
 
     function _digest(Intent calldata intent) private view returns (bytes32) {
-        return keccak256(abi.encodePacked("", domainSeparator(), keccak256(abi.encode(INTENT_TYPEHASH, intent))));
+        return keccak256(abi.encodePacked(hex"1901", domainSeparator(), keccak256(abi.encode(INTENT_TYPEHASH, intent))));
     }
 
     function _dispatch(Intent calldata intent) private {
