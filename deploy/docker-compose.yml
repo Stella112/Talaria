@@ -47,7 +47,7 @@ services:
       API_PORT: "8788"
       RELAYER_URL: http://relayer:8787
     ports: ["8902:8788"]
-    mem_limit: 150m
+    mem_limit: 200m
     cpus: 0.25
 
 volumes:

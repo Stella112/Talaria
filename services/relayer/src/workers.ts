@@ -1,7 +1,8 @@
 import type { Chain } from "./chain";
 import type { Store } from "./store";
 
-const MAX_BLOCK_RANGE = 2_000n;
+// The public Base Sepolia RPC rejects eth_getLogs over 200 blocks.
+const MAX_BLOCK_RANGE = 150n;
 const MAX_BATCH = 50;
 const SOURCE_CONFIRMATIONS = 2n;
 

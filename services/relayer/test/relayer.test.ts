@@ -58,7 +58,7 @@ describe("pollBridge", () => {
     const store = new Store();
     const lockedEvents = vi.fn(async () => []);
     await pollBridge(fake({ sourceHead: vi.fn(async () => 10_000n), lockedEvents }), store, 0n);
-    expect(lockedEvents).toHaveBeenCalledWith(0n, 1_999n);
+    expect(lockedEvents).toHaveBeenCalledWith(0n, 149n);
   });
 });
 
