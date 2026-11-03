@@ -1,0 +1,8 @@
+token 0x44bC5dCFbA3f36fB03623A27e553CDbb0B8877f0
+owner 0xD452eed08e545d186c8a87e4c9001fc08A60Bab7
+relayer 0x0000000000000000000000000000000000000000
+invoiceCount 0
+receiptCount 0
+bridgeReserve 0
+domainSeparator 0xad8aa4d6ea581ac9bb6dda698a6d1dc6ff5a6a045005225e968cbf7dddbfdc66
+deployer tPOT 15.043044997724516395

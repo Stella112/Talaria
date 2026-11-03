@@ -13,5 +13,20 @@
     "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
     "timestampUTC": "2026-11-03T10:57:17.558Z",
     "gitCommit": "ba86728fbdc48e56e7eca76fb5769087b48f26c6"
+  },
+  {
+    "name": "TalariaCore",
+    "address": "0x69d4105479e25503f296797b91901ab558c830ac",
+    "deployTxHash": "0x28364ba30977ef1a97820d520eff7b77542fb9d6f8e0d6ac5d8bd6c5b6456222",
+    "blockNumber": "305483",
+    "runtimeBytecodeBytes": 8539,
+    "depositEstimateTPOT": 694.5737627921245,
+    "depositActualTPOT": null,
+    "totalBalanceChangeTPOT": "683.8876125804688953",
+    "gasUsed": "29357699617105340",
+    "effectiveGasPrice": "23295",
+    "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "timestampUTC": "2026-11-03T11:34:52.128Z",
+    "gitCommit": "bacb9fc469f2b4e04bbb3bba51e7dace282b9adb"
   }
 ]

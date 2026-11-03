@@ -23,3 +23,6 @@ Balances at 2026-11-03T10:37Z: native wallet 1000 tPOT free, EVM deployer 0 tPOT
 - TalariaUSD rewritten without OpenZeppelin: 3018 runtime bytes, down from 4595.
 - TalariaUSD live at `0x44bc5dcfba3f36fb03623a27e553cdbb0b8877f0`. Deployment cost 252.69 tPOT, about 0.084 tPOT per byte.
 - Faucet, permit and transferFrom succeeded on-chain; see `evidence/TRANSACTIONS.md`. A new storage slot costs about 3.84 tPOT.
+
+## Phase 3: Deploy and live flows
+- TalariaCore live at `0x69d4105479e25503f296797b91901ab558c830ac`, 8539 bytes, 683.89 tPOT.
