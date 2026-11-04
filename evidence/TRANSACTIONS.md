@@ -95,3 +95,6 @@
 | bridge (BNB testnet) | approve lockbox | `0x04326bdb72ff47be34dfbf56a4d5434ddde3b2e5b092cd8ec10b951f276dd2c9` | 140835033 | success | test BNB |
 | bridge (BNB testnet) | lock on BNB | `0xc210a9bb20b85c55b4868510be1259d33e6f1d80e1050fd1b372135c8b97e048` | 140835036 | success | test BNB |
 | bridge | credit from BNB testnet, sent by the VPS relayer | `0x34f3eb5c34f527da86940237f86bf1a9eeed94417f589639c9e30b063d63b0b8` | 325546 | success | tPOT |
+| protect | mandate purchase through the site's hosted agent, Trusted Coffee | `0x294b8cd52657f7c03e49314fa444937e1c9473cecaa41b1068982d7a43f4e71a` | 325703 | success | paid by the VPS relayer, 11.71 tPOT |
+| feedback (Base Sepolia) | 6:10590:released | `0x2949c7ecfe378c21e5e6ad0f514d4a5bdc2a47b377d5b069df0d1821173e150e` | 54530764 | success | test ETH |
+| feedback (Base Sepolia) | 6:10589:released | `0x84838952f97df6c9b7b952eb054403d93f043e79f8ab91da089aa7b3b831aab3` | 54530771 | success | test ETH |
