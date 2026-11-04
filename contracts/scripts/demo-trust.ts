@@ -1,5 +1,6 @@
 // The live money shot. Needs the batch deployed, subjects registered and the relayer running live.
 // Spends tPOT through the relayer. Every hash goes to evidence/TRANSACTIONS.md.
+//   --fund     lock mUSDC on Base for the buyer, and wait for the relayer's credit
 //   --seed     real purchases from Trusted Coffee, to build its history (each waits out the New hold)
 import { encodeFunctionData, keccak256, parseAbi, toHex, type Hex } from "viem";
 import { createTalaria } from "../../packages/sdk/src";
@@ -48,6 +49,25 @@ async function main() {
     recordTx(rail, action, receipt, "paid by relayer");
   };
 
+  const fundFromBase = async (amount: bigint, ref: string) => {
+    const account = baseWallet(buyer);
+    const usdcAbi = parseAbi(["function mint(uint256 amount)", "function approve(address spender, uint256 amount) returns (bool)"]);
+    const lockAbi = parseAbi(["function lock(address portaldotRecipient, uint256 amount, bytes32 intentRef)"]);
+    const start = await buyerSdk.getBalance();
+    for (const [action, to, data] of [
+      ["mint mUSDC", usdc, encodeFunctionData({ abi: usdcAbi, functionName: "mint", args: [amount] })],
+      ["approve lockbox", usdc, encodeFunctionData({ abi: usdcAbi, functionName: "approve", args: [lockbox, amount] })],
+      ["lock on Base", lockbox, encodeFunctionData({ abi: lockAbi, functionName: "lock", args: [buyer.address, amount, keccak256(toHex(ref))] })],
+    ] as const) {
+      const hash = await account.sendTransaction({ to, data });
+      recordTx("bridge (Base Sepolia)", action, await base.waitForTransactionReceipt({ hash, timeout: 180_000 }), "test ETH");
+    }
+    await waitFor("the bridge credit", async () => (await buyerSdk.getBalance()) >= start + amount);
+    console.log("Credited. Buyer balance", await buyerSdk.getBalance(), "base units");
+  };
+
+  if (flag("--fund")) return fundFromBase(12_000_000n, `demo-fund-${Date.now()}`);
+
   if (flag("--seed")) {
     log(`Building Trusted Coffee's history with ${SEED_PURCHASES} real purchases`);
     for (let i = 0; i < SEED_PURCHASES; i++) {
@@ -59,20 +79,7 @@ async function main() {
   }
 
   log("1. Fund from Base Sepolia");
-  const account = baseWallet(buyer);
-  const usdcAbi = parseAbi(["function mint(uint256 amount)", "function approve(address spender, uint256 amount) returns (bool)"]);
-  const lockAbi = parseAbi(["function lock(address portaldotRecipient, uint256 amount, bytes32 intentRef)"]);
-  const amount = 5_000_000n;
-  const start = await buyerSdk.getBalance();
-  for (const [action, to, data] of [
-    ["mint mUSDC", usdc, encodeFunctionData({ abi: usdcAbi, functionName: "mint", args: [amount] })],
-    ["approve lockbox", usdc, encodeFunctionData({ abi: usdcAbi, functionName: "approve", args: [lockbox, amount] })],
-    ["lock on Base", lockbox, encodeFunctionData({ abi: lockAbi, functionName: "lock", args: [buyer.address, amount, keccak256(toHex("demo-trust"))] })],
-  ] as const) {
-    const hash = await account.sendTransaction({ to, data });
-    recordTx("bridge (Base Sepolia)", action, await base.waitForTransactionReceipt({ hash, timeout: 180_000 }), "test ETH");
-  }
-  await waitFor("the bridge credit", async () => (await buyerSdk.getBalance()) >= start + amount);
+  await fundFromBase(5_000_000n, `demo-trust-${Date.now()}`);
 
   log("2. The agent buys from New Shop under a mandate: funds are held");
   const first = await agentSdk.payWithMandate(await buyerSdk.createMandate({ agent: agent.address, payees: [newShop], maxAmount: "2" }), { payee: newShop, amount: "2" });
