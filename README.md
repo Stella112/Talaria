@@ -21,7 +21,7 @@
 | Webhooks, idempotency | Built and tested with stubs. Not run against a real merchant |
 | Hosted agent, relayer | **Running on a VPS.** The relayer's tPOT is limited, so gasless actions pause at a set floor |
 | MCP server, x402 v2 headers | Built and tested locally |
-| BNB testnet | Support is in the relayer and scripts. **Not deployed:** it needs test BNB |
+| BNB testnet as a second source chain | **Contracts deployed, and the relayer is watching.** No lock has gone through it yet |
 
 **The live flow:** a new merchant's payment is held, disputed and refunded, the refund returns to Base, and negative feedback lands on Base. Then a merchant with real history settles instantly. Trusted Coffee's score of 100 comes from real settled demo purchases by us, not from customers.
 
@@ -114,6 +114,8 @@ Off-chain: a relayer (bridge, intents, keeper, settler), TypeScript SDK, hosted 
 | TalariaSubscriptions (Base copy) | `0x394cb7bd33e1745a1f4b3d70bef7a8f742211627` | `0xc3e13f52bd4766cd5c1e3acca232ab2d347db2678fa9e5a6ffa6674903c0a4e6` |
 | TalariaStreams (Base copy) | `0xf44780000c3b19f8dff8c08ba0b66518e8994a9f` | `0xbe6917c43aaa01ebdf2d6cb2aa4488f89ee2d6e513b860c96e2d3ce6b1dba473` |
 | TalariaChannels (Base copy) | `0x31849ec8ed12c615c02292a664988281c0dece67` | `0xaced873177fd79c02e2fa51fd41b8f1312a92a751b3cb477aa784ae5ae9cc38c` |
+| MockUSDC (BNB testnet) | `0x44bc5dcfba3f36fb03623a27e553cdbb0b8877f0` | `0x56a5534a57d785d534e02880e06f0569fe8ac166e308ad2b45263db11df2917b` |
+| TalariaLockboxV2 (BNB testnet) | `0x67e3e8d6185f2e57c60d63b81fc1376ff120b467` | `0x236667084646108c3c79d04fdb60202f58dffad824fe235e371b27245e154986` |
 | TalariaRemit (Base copy) | `0x126e6de91575c17d02d76b0f723c7bfab6c536d1` | `0xa52ed76315c96fe967c6ba9f1c5e9de1470c5421da703ce3eef77ad0d03854b4` |
 
 **ERC-8004 registries used** (run by their maintainers, not by us): Identity `0x8004A818BFB912233c491871b3d84c89A494BD9e`, Reputation `0x8004B663056A597Dffe9eCcC1965A193B7388713`. We confirmed code at both addresses on Base Sepolia.
@@ -142,7 +144,7 @@ From `pnpm stats` and the relayer's records, on 2026-11-04. These are our own te
 
 | Metric | Count |
 |---|---|
-| Contracts deployed | 4 on Portaldot, 8 on Base Sepolia |
+| Contracts deployed | 4 on Portaldot, 8 on Base Sepolia, 2 on BNB testnet |
 | Invoices created, receipts issued on Portaldot | 1, 6 |
 | Protected payments on Portaldot, released | 5, 4 |
 | Disputes opened, resolved | 1, 1 |
@@ -258,7 +260,7 @@ Full list: [docs/SECURITY.md](docs/SECURITY.md).
 ## Roadmap
 
 1. Deploy the four rails directly on Portaldot.
-2. BNB testnet as a second source chain.
+2. A first real payment from BNB testnet, and BNB in the web checkout.
 3. Multiple attesters, a multi-signer bridge, and more source chains.
 4. Independent audit, then Portaldot mainnet.
 5. A reputation API, and licensed off-ramp partners.
