@@ -6,6 +6,12 @@ import type { Store, StoredVoucher } from "./store";
 
 export class SpendLimitError extends Error {}
 
+/** Refuses a send once the balance falls to the floor, keeping the rest for what matters most. */
+export async function assertAboveFloor(client: Pick<PublicClient, "getBalance">, address: Address, floorWei: bigint, action: string) {
+  const balance = await client.getBalance({ address });
+  if (balance <= floorWei) throw new SpendLimitError(`Refused ${action}: the relayer has reached its tPOT floor. Gasless actions are paused.`);
+}
+
 /** Everything that touches a chain, so the workers can be tested without one. */
 export type Chain = {
   lockedEvents(from: bigint, to: bigint): Promise<{ payer: Address; recipient: Address; amount: bigint; txHash: Hex; intentRef: Hex }[]>;
@@ -33,6 +39,8 @@ export type LiveConfig = {
   maxTxPerHour: number;
   /** Without this, every write is refused so nothing spends tPOT by accident. */
   live: boolean;
+  /** Stop sending at this balance. */
+  floorWei?: bigint;
 };
 
 export function liveChain(cfg: LiveConfig): Chain {
@@ -40,6 +48,7 @@ export function liveChain(cfg: LiveConfig): Chain {
   async function send(address: Address, abi: any, functionName: string, args: unknown[]): Promise<Hex> {
     const { request } = await cfg.portaldot.simulateContract({ account: cfg.wallet.account, address, abi, functionName, args } as any);
     if (!cfg.live) throw new SpendLimitError(`Refused ${functionName}: RELAYER_LIVE is not set`);
+    await assertAboveFloor(cfg.portaldot, cfg.wallet.account!.address, cfg.floorWei ?? 0n, functionName);
     if (!cfg.store.takeSendSlot(cfg.maxTxPerHour)) throw new SpendLimitError(`Refused ${functionName}: over ${cfg.maxTxPerHour} transactions per hour`);
     const hash = await cfg.wallet.writeContract(request as any);
     const receipt = await cfg.portaldot.waitForTransactionReceipt({ hash, timeout: 180_000 });
@@ -107,6 +116,7 @@ export function liveSettlement(cfg: SettlementConfig): SettlementChain & Protect
   async function send(address: Address, abi: any, functionName: string, args: unknown[]) {
     const { request } = await cfg.portaldot.simulateContract({ account: cfg.wallet.account, address, abi, functionName, args } as any);
     if (!cfg.live) throw new SpendLimitError(`Refused ${functionName}: RELAYER_LIVE is not set`);
+    await assertAboveFloor(cfg.portaldot, cfg.wallet.account!.address, cfg.floorWei ?? 0n, functionName);
     if (!cfg.store.takeSendSlot(cfg.maxTxPerHour)) throw new SpendLimitError(`Refused ${functionName}: over ${cfg.maxTxPerHour} transactions per hour`);
     const hash = await cfg.wallet.writeContract(request as any);
     const receipt = await cfg.portaldot.waitForTransactionReceipt({ hash, timeout: 180_000 });

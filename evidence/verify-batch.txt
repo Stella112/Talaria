@@ -1,0 +1,9 @@
+holds (s) 0, 600, 1800 | caps (tUSD) 100, 25, 5
+arbiter is deployer true
+attester correct true
+protect's token correct true
+protect's core correct true
+rail 6 is protect true
+rail 7 is bridge-out true
+base allowed true
+payments so far 0

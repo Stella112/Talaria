@@ -1,6 +1,6 @@
 // Uses an in-memory fake chain: this proves the worker logic, not the live network.
 import { describe, expect, it, vi } from "vitest";
-import { SpendLimitError, type Chain } from "../src/chain";
+import { assertAboveFloor, SpendLimitError, type Chain } from "../src/chain";
 import { buildServer } from "../src/server";
 import { Db } from "../src/db";
 import { Store } from "../src/store";
@@ -205,5 +205,15 @@ describe("webhook routes", () => {
     const bad = await app.inject({ method: "POST", url: "/webhooks", payload: { merchant: ADDR, url: "http://169.254.169.254/", timestamp: 1, signature: "0x12" } });
     expect(bad.statusCode).toBe(400);
     expect((await app.inject({ url: `/webhooks/${ADDR}/deliveries` })).json().deliveries).toEqual([]);
+  });
+});
+
+describe("tPOT floor", () => {
+  const client = (balance: bigint) => ({ getBalance: vi.fn(async () => balance) }) as any;
+
+  it("allows sends above the floor and refuses at or below it", async () => {
+    await expect(assertAboveFloor(client(31n), ADDR, 30n, "execute")).resolves.toBeUndefined();
+    await expect(assertAboveFloor(client(30n), ADDR, 30n, "execute")).rejects.toBeInstanceOf(SpendLimitError);
+    await expect(assertAboveFloor(client(1n), ADDR, 30n, "execute")).rejects.toThrow("floor");
   });
 });

@@ -1,7 +1,7 @@
 import { baseSepoliaDeployments, portaldotClient, portaldotDeployments, portaldotTestnet, retryTransport } from "@talaria-pay/sdk";
 import { config as loadEnv } from "dotenv";
 import { resolve } from "node:path";
-import { createPublicClient, createWalletClient, type Hex, type PublicClient } from "viem";
+import { createPublicClient, createWalletClient, parseEther, type Hex, type PublicClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { liveChain, liveSettlement } from "./chain";
@@ -22,7 +22,8 @@ if (!key) throw new Error("RELAYER_PRIVATE_KEY is not set");
 const account = toAccount(key);
 const rpc = process.env.PORTALDOT_EVM_RPC || portaldotTestnet.rpcUrls.default.http[0];
 const live = process.env.RELAYER_LIVE === "1";
-const maxTxPerHour = Number(process.env.RELAYER_MAX_TX_PER_HOUR || 20);
+const maxTxPerHour = Number(process.env.RELAYER_MAX_TX_PER_HOUR || 5);
+const floorWei = parseEther(process.env.RELAYER_MIN_TPOT || "30");
 
 const store = new Store(resolve(__dirname, "../data/state.json"));
 const db = new Db(resolve(__dirname, "../data/talaria.sqlite"));
@@ -34,7 +35,7 @@ const [source] = sourceChains(process.env, deployed);
 const base = createPublicClient({ chain: baseSepolia, transport: retryTransport(source.rpc) }) as PublicClient;
 const baseWallet = createWalletClient({ account, chain: baseSepolia, transport: retryTransport(source.rpc) });
 
-const common = { portaldot, wallet, core: portaldotDeployments.TalariaCore, store, maxTxPerHour, live };
+const common = { portaldot, wallet, core: portaldotDeployments.TalariaCore, store, maxTxPerHour, live, floorWei };
 const chain = liveChain({
   ...common,
   base,

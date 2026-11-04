@@ -16,7 +16,7 @@
 |---|---|
 | Base Sepolia → Portaldot checkout: lock, relayer credit, gasless invoice payment | **Live on testnet**, see [evidence](evidence/TRANSACTIONS.md) |
 | `TalariaLockboxV2` on Base Sepolia | **Deployed.** No lock or release through it yet |
-| `TalariaProtect` (holds, disputes, refunds, trust tiers, mandates, agent caps) and `TalariaBridgeOut` | **Built and tested on a local chain only. Not deployed:** they need about 789 tPOT |
+| `TalariaProtect` (holds, disputes, refunds, trust tiers, mandates, agent caps) and `TalariaBridgeOut` | **Deployed on testnet.** No payment has gone through them yet |
 | Trust attester, reputation reads, feedback to Base, webhooks, idempotency | Built and tested with stubs. One real read of the registries has run. **No feedback has been written yet** |
 | Hosted agent, MCP server, x402 v2 headers | Built and tested locally. **Not hosted yet** |
 | Subscriptions, streams, pay-per-call, remittance contracts | Built and tested on a local chain. **Not deployed** |
@@ -98,6 +98,8 @@ Off-chain: a relayer (bridge, intents, keeper, settler), TypeScript SDK, hosted 
 |---|---|---|---|---|
 | TalariaUSD | `0x44bc5dcfba3f36fb03623a27e553cdbb0b8877f0` | `0xd8e98c3e75d7e3f4687b3149d59da74641538b6ee07658d6bb1af65772771d38` | 3,018 | 252.69 |
 | TalariaCore | `0x69d4105479e25503f296797b91901ab558c830ac` | `0x28364ba30977ef1a97820d520eff7b77542fb9d6f8e0d6ac5d8bd6c5b6456222` | 8,539 | 683.89 |
+| TalariaBridgeOut | `0x40b43930a97f328bc3325adb22ec0f01a5432320` | `0xb91d91e686f2275cce227b0437987498a5c1c1dbc4dabf7a1d976d02ee666570` | 1,161 | 103.82 |
+| TalariaProtect | `0xc2e44329d071dd9683f2050e943dde19dac145e1` | `0xb702e7c29bccb15b55fa1bdc9b18405736272821a58e6ece0e08dfaa3355a692` | 8,401 | 673.18 |
 
 **Base Sepolia**
 
@@ -162,7 +164,7 @@ pnpm --filter @talaria-pay/web build
 pnpm --filter @talaria-pay/web start
 ```
 
-Relayer. Set `RELAYER_PRIVATE_KEY`, `ATTESTER_PRIVATE_KEY` and `SETTLEMENT_PRIVATE_KEY`. Without `RELAYER_LIVE=1` it refuses every write. With it, it spends tPOT, up to `RELAYER_MAX_TX_PER_HOUR` transactions.
+Relayer. Set `RELAYER_PRIVATE_KEY`, `ATTESTER_PRIVATE_KEY` and `SETTLEMENT_PRIVATE_KEY`. Without `RELAYER_LIVE=1` it refuses every write. With it, it spends tPOT, up to `RELAYER_MAX_TX_PER_HOUR` transactions, and stops at the `RELAYER_MIN_TPOT` balance.
 
 ```bash
 pnpm --filter @talaria-pay/relayer start
