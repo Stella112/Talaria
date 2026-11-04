@@ -1,5 +1,5 @@
 // Real numbers only: every figure is read from the chain or our own records. Sends nothing.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { TalariaCoreAbi, TalariaProtectAbi } from "../../packages/sdk/src/generated";
 import { addressOf, fail, portaldot, readRecords, root } from "./lib/env";
