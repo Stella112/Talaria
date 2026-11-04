@@ -21,7 +21,7 @@
 | Webhooks, idempotency | Built and tested with stubs. Not run against a real merchant |
 | Hosted agent, relayer | **Running on a VPS.** The relayer's tPOT is limited, so gasless actions pause at a set floor |
 | MCP server, x402 v2 headers | Built and tested locally |
-| BNB testnet as a second source chain | **Contracts deployed, and the relayer is watching.** No lock has gone through it yet |
+| BNB testnet as a second source chain | **Live for bridging in.** One real lock on BNB was credited on Portaldot, and the agent is registered there as id 2723. Bridge-out to BNB is enabled but untested, and the web checkout still offers Base only |
 
 **The live flow:** a new merchant's payment is held, disputed and refunded, the refund returns to Base, and negative feedback lands on Base. Then a merchant with real history settles instantly. Trusted Coffee's score of 100 comes from real settled demo purchases by us, not from customers.
 
@@ -126,6 +126,8 @@ Off-chain: a relayer (bridge, intents, keeper, settler), TypeScript SDK, hosted 
 |---|---|---|
 | Lock 10 mUSDC | Base Sepolia | `0x1e8fddc7ce961eee32eb158aeb1eeb8dd669b1f993366a9248ac013eb0d00364` |
 | Relayer credits the payer | Portaldot | `0xb0d9b610ecdb280b356c9be2c9919b4770f470b662ed9d0907297fa8be8e9bf1` |
+| Lock 2 mUSDC on BNB testnet | BNB testnet | `0xc210a9bb20b85c55b4868510be1259d33e6f1d80e1050fd1b372135c8b97e048` |
+| Relayer credits it, source chain 97 | Portaldot | `0x34f3eb5c34f527da86940237f86bf1a9eeed94417f589639c9e30b063d63b0b8` |
 | Payer with 0 tPOT pays invoice 1 | Portaldot | `0x7fe8f26f10f5ad7f2e9a8a06348eef6ba26a0515697a778dd2e15059e45000ab` |
 | Agent buys from New Shop: held 30 min | Portaldot | `0x5f2abd215e1ade9126a89ead81717f9135a862eb11a4b5dc481092bf34af073e` |
 | Buyer disputes | Portaldot | `0x803e74783c16aff7b821740284054c388e788fb4857f6fb0b68bc435dcda161b` |
@@ -150,7 +152,7 @@ From `pnpm stats` and the relayer's records, on 2026-11-04. These are our own te
 | Disputes opened, resolved | 1, 1 |
 | Feedback written to Base | 9 |
 | Subjects registered in ERC-8004 | 3 |
-| Recorded transactions | 85 |
+| Recorded transactions | 95 |
 
 ## Business
 
@@ -260,7 +262,7 @@ Full list: [docs/SECURITY.md](docs/SECURITY.md).
 ## Roadmap
 
 1. Deploy the four rails directly on Portaldot.
-2. A first real payment from BNB testnet, and BNB in the web checkout.
+2. BNB in the web checkout, and a bridge-out run to BNB.
 3. Multiple attesters, a multi-signer bridge, and more source chains.
 4. Independent audit, then Portaldot mainnet.
 5. A reputation API, and licensed off-ramp partners.

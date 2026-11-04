@@ -87,3 +87,11 @@
 | bridge-out (Base Sepolia) | release to buyer | `0x4e5b8ba1e6099a3330106c512e6884d476ba0c8d9346de269ed2a7401dfa879d` | 54507420 | success | sent by the VPS relayer |
 | deploy (BNB testnet) | MockUSDC | `0x56a5534a57d785d534e02880e06f0569fe8ac166e308ad2b45263db11df2917b` | 140833585 | success | test BNB |
 | deploy (BNB testnet) | TalariaLockboxV2 | `0x236667084646108c3c79d04fdb60202f58dffad824fe235e371b27245e154986` | 140833594 | success | test BNB |
+| setup (BNB testnet) | send 0.02 tBNB to relayer | `0x144ecf017fe06e195d68ff25109d475fbdac11fadf5ed4137cefe96cbe610567` | 140834865 | success | test BNB |
+| setup (BNB testnet) | send 0.01 tBNB to agent | `0x7a677a75251a3aa87642ffb4a69004158ce18b9bf38fb7396dd2e20c1bfe3761` | 140834870 | success | test BNB |
+| identity (BNB testnet) | register Talaria Autopilot | `0xc97810cf19cdfe33a9eb28bbd7d6590de33a0e72aaf938d05186bf157f4f47fe` | 140834880 | success | test BNB |
+| setup | setDest bnb-testnet | `0x6fce2e82b80084b3d90ba61cf77e02e3202346b5c5f7b75084e1c69830dbbc6b` | 325459 | success | tPOT |
+| bridge (BNB testnet) | mint mUSDC | `0xc81be1ffeda747e43585d92110b09a941fb4cc5394f2a08c3021b9ce1f1e1595` | 140835028 | success | test BNB |
+| bridge (BNB testnet) | approve lockbox | `0x04326bdb72ff47be34dfbf56a4d5434ddde3b2e5b092cd8ec10b951f276dd2c9` | 140835033 | success | test BNB |
+| bridge (BNB testnet) | lock on BNB | `0xc210a9bb20b85c55b4868510be1259d33e6f1d80e1050fd1b372135c8b97e048` | 140835036 | success | test BNB |
+| bridge | credit from BNB testnet, sent by the VPS relayer | `0x34f3eb5c34f527da86940237f86bf1a9eeed94417f589639c9e30b063d63b0b8` | 325546 | success | tPOT |
