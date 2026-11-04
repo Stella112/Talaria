@@ -85,3 +85,5 @@
 | settlement (Base Sepolia) | approve lockbox | `0x8c436af24bcc8a97c9f1046aee49d1276c44b13514b998c65f7da0975aa00f66` | 54507857 | success | test ETH |
 | settlement (Base Sepolia) | lock proceeds | `0xec998f4f60ecfe06c98f664572056939cf182a30dad757aee9599c9fa731df1f` | 54507873 | success | test ETH |
 | bridge-out (Base Sepolia) | release to buyer | `0x4e5b8ba1e6099a3330106c512e6884d476ba0c8d9346de269ed2a7401dfa879d` | 54507420 | success | sent by the VPS relayer |
+| deploy (BNB testnet) | MockUSDC | `0x56a5534a57d785d534e02880e06f0569fe8ac166e308ad2b45263db11df2917b` | 140833585 | success | test BNB |
+| deploy (BNB testnet) | TalariaLockboxV2 | `0x236667084646108c3c79d04fdb60202f58dffad824fe235e371b27245e154986` | 140833594 | success | test BNB |
