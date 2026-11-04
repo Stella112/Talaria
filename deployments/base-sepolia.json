@@ -28,5 +28,55 @@
     "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
     "timestampUTC": "2026-11-03T21:08:14.806Z",
     "gitCommit": "47eb4db8df9405a1ec3a9725dd19ce0e6ca7e9c6"
+  },
+  {
+    "name": "TalariaCore",
+    "address": "0x41b0e2fa8a49d5289f9f03b46228b6362da99455",
+    "deployTxHash": "0xe9e5c9098a38a4a51314cd6767d643960edef8813a50a57642b35f5102bb44ac",
+    "blockNumber": "54505344",
+    "runtimeBytecodeBytes": 8539,
+    "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "timestampUTC": "2026-11-04T20:09:00.770Z",
+    "gitCommit": "6c8398800e87c957f2241a2577cf8f7c2d7cacdb"
+  },
+  {
+    "name": "TalariaSubscriptions",
+    "address": "0x394cb7bd33e1745a1f4b3d70bef7a8f742211627",
+    "deployTxHash": "0xc3e13f52bd4766cd5c1e3acca232ab2d347db2678fa9e5a6ffa6674903c0a4e6",
+    "blockNumber": "54505364",
+    "runtimeBytecodeBytes": 2480,
+    "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "timestampUTC": "2026-11-04T20:09:05.690Z",
+    "gitCommit": "6c8398800e87c957f2241a2577cf8f7c2d7cacdb"
+  },
+  {
+    "name": "TalariaStreams",
+    "address": "0xf44780000c3b19f8dff8c08ba0b66518e8994a9f",
+    "deployTxHash": "0xbe6917c43aaa01ebdf2d6cb2aa4488f89ee2d6e513b860c96e2d3ce6b1dba473",
+    "blockNumber": "54505409",
+    "runtimeBytecodeBytes": 2356,
+    "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "timestampUTC": "2026-11-04T20:09:13.840Z",
+    "gitCommit": "6c8398800e87c957f2241a2577cf8f7c2d7cacdb"
+  },
+  {
+    "name": "TalariaChannels",
+    "address": "0x31849ec8ed12c615c02292a664988281c0dece67",
+    "deployTxHash": "0xaced873177fd79c02e2fa51fd41b8f1312a92a751b3cb477aa784ae5ae9cc38c",
+    "blockNumber": "54505445",
+    "runtimeBytecodeBytes": 3498,
+    "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "timestampUTC": "2026-11-04T20:09:20.944Z",
+    "gitCommit": "6c8398800e87c957f2241a2577cf8f7c2d7cacdb"
+  },
+  {
+    "name": "TalariaRemit",
+    "address": "0x126e6de91575c17d02d76b0f723c7bfab6c536d1",
+    "deployTxHash": "0xa52ed76315c96fe967c6ba9f1c5e9de1470c5421da703ce3eef77ad0d03854b4",
+    "blockNumber": "54505484",
+    "runtimeBytecodeBytes": 3056,
+    "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "timestampUTC": "2026-11-04T20:09:29.045Z",
+    "gitCommit": "6c8398800e87c957f2241a2577cf8f7c2d7cacdb"
   }
 ]
