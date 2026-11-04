@@ -23,7 +23,7 @@ export function sourceChains(env: Record<string, string | undefined>, deployed: 
     {
       chainId: bscTestnet.id,
       name: "BNB testnet",
-      rpc: env.BNB_TESTNET_RPC || "https://data-seed-prebsc-1-s1.binance.org:8545",
+      rpc: env.BNB_TESTNET_RPC || "https://bsc-testnet-rpc.publicnode.com",
       lockbox: bnb.TalariaLockboxV2,
       token: bnb.MockUSDC,
       confirmations: 3n,

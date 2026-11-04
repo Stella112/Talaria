@@ -6,7 +6,7 @@ import { retryTransport } from "../../packages/sdk/src/chain";
 import { addRecord, addressOf, artifact, fail, flag, keyAccount, portaldot, portaldotWallet, preview, recordTx, runtimeBytes } from "./lib/env";
 
 const FILE = "bnb-testnet.json";
-const rpc = process.env.BNB_TESTNET_RPC || "https://data-seed-prebsc-1-s1.binance.org:8545";
+const rpc = process.env.BNB_TESTNET_RPC || "https://bsc-testnet-rpc.publicnode.com";
 
 async function main() {
   const account = keyAccount("DEPLOYER_PRIVATE_KEY");
