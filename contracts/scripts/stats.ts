@@ -2,7 +2,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { TalariaCoreAbi, TalariaProtectAbi } from "../../packages/sdk/src/generated";
-import { Db } from "../../services/relayer/src/db";
 import { addressOf, fail, portaldot, readRecords, root } from "./lib/env";
 
 const CORE_DEPLOY_BLOCK = 305483n;
@@ -16,7 +15,6 @@ async function main() {
   const table = resolve(root, "evidence/TRANSACTIONS.md");
   const rows = existsSync(table) ? readFileSync(table, "utf8").split("\n").filter((line) => line.startsWith("| ") && !line.startsWith("| Rail")) : [];
   const identities = resolve(root, "deployments/identities.json");
-  const database = resolve(root, "services/relayer/data/talaria.sqlite");
 
   const stats = {
     readAtUTC: new Date().toISOString(),
@@ -32,7 +30,7 @@ async function main() {
     trustApplied: await count("TrustApplied"),
     subjectsRegistered: existsSync(identities) ? Object.keys(JSON.parse(readFileSync(identities, "utf8"))).length : 0,
     recordedTransactions: rows.length,
-    feedbackWrittenToBase: existsSync(database) ? new Db(database).countFeedback() : (readFileSync(resolve(__dirname, "../../evidence/TRANSACTIONS.md"), "utf8").match(/^| feedback (Base Sepolia)/gm) ?? []).length,
+    feedbackWrittenToBase: rows.filter((line) => line.startsWith("| feedback (Base Sepolia)")).length,
     note: "null means the contract is not deployed yet. Log-based counts may undercount if the RPC has pruned logs.",
   };
   console.log(JSON.stringify(stats, null, 2));
