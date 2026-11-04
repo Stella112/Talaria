@@ -64,3 +64,23 @@
 | remittance (Base Sepolia) | claim | `0x46de6d318bf31fa76a3b5d5805583f6b4131af402fe956283471dddf1f5ba5a0` | 54506353 | success | test ETH |
 | remittance (Base Sepolia) | send claim link | `0xb445299f218017c07872684589de8e200a3cfde89c8559f4f4cacb41fd0397a1` | 54506369 | success | test ETH |
 | remittance (Base Sepolia) | claim with link | `0x7bef030f2bfa5165822a69c5f54e9539e9a6345eda4fe3c951d0313acf132e02` | 54506570 | success | test ETH |
+| bridge (Base Sepolia) | mint mUSDC | `0x8188a583922bec5ec99a70b9a11e6ba7a992647a1db3c5c5dfd1c9996127aba0` | 54507072 | success | test ETH |
+| bridge (Base Sepolia) | approve lockbox | `0xf22970cc5fe638f409161cbff2f96355f78b5c7fb3af2cd7ed5617fc2adb230a` | 54507089 | success | test ETH |
+| bridge (Base Sepolia) | lock on Base | `0xece8ae33164e107753403bacf13e5ed5c5bce57f52441d0968965520f1fd1528` | 54507104 | success | test ETH |
+| protect | mandate purchase, New Shop | `0x5f2abd215e1ade9126a89ead81717f9135a862eb11a4b5dc481092bf34af073e` | 324931 | success | paid by relayer |
+| protect | dispute | `0x803e74783c16aff7b821740284054c388e788fb4857f6fb0b68bc435dcda161b` | 324933 | success | paid by relayer |
+| protect | arbiter resolve | `0x775a18c5d87ae0ac00710b5d8c4e67dbf319bc779d8be7736126cc457c5e1047` | 324934 | success | paid by arbiter (deployer) |
+| bridge-out | bridgeOut | `0xcb378549d30e76351f0a92c08e1ff237664fd7d93b876757c8d1f006c54670b9` | 324935 | success | paid by relayer |
+| protect | mandate purchase, Trusted Coffee | `0xff4f51b92c5d5e3edc2e86f19e80f2c5484a76b664d4038fb36fcda633ceb10a` | 324940 | success | paid by relayer |
+| feedback (Base Sepolia) | 1:10590:released | `0x15e71afd3ef59e7de22c15e65465e7017ba7867dbb9a91b3945689b67ac5e625` | see BaseScan | done | test ETH |
+| feedback (Base Sepolia) | 1:10589:released | `0x3c5a908af408339c62c583c8390ef3371a8ecef187c8eeca3205dadda42ace78` | see BaseScan | done | test ETH |
+| feedback (Base Sepolia) | 2:10590:released | `0xa905f649cc7450d5bf2b4b77e0736c21e573821f484ba610b8765ade3187da9c` | see BaseScan | done | test ETH |
+| feedback (Base Sepolia) | 2:10589:released | `0xff4f4e9409e8949f9a4af94b218cd844a6d27a0dd09c49fbe97dae0f5436a020` | see BaseScan | done | test ETH |
+| feedback (Base Sepolia) | 3:10590:released | `0x97d2858a718f8d2f4c8364e846767df4e3f53b1f72830b2e46ac20f10e5ab961` | see BaseScan | done | test ETH |
+| feedback (Base Sepolia) | 3:10589:released | `0xcc81e8b6d79421d69c72bef1ec8e28c117626c27e1914f852966f7e9898a1386` | see BaseScan | done | test ETH |
+| feedback (Base Sepolia) | 4:10591:refunded | `0x6b36aac7530da0405612d376e463f54ad9ddac4f358b4ea7a4afb1702a85a61e` | see BaseScan | done | test ETH |
+| feedback (Base Sepolia) | 5:10590:released | `0xa937c932653e6eeac7189248f6dbc22fbde138422fd8aaaf8e9304079c985e4f` | see BaseScan | done | test ETH |
+| feedback (Base Sepolia) | 5:10589:released | `0xf51ec1e8d98b6d4b803fdd8562844cf60ea8e794a12e3adf5d8353fde32196d9` | see BaseScan | done | test ETH |
+| settlement (Base Sepolia) | withdraw proceeds | `0x42b5ff34d553f5c5d71c044cd099c808d2266b9261267cc648bbda68b6e3a42e` | 54507838 | success | test ETH |
+| settlement (Base Sepolia) | approve lockbox | `0x8c436af24bcc8a97c9f1046aee49d1276c44b13514b998c65f7da0975aa00f66` | 54507857 | success | test ETH |
+| settlement (Base Sepolia) | lock proceeds | `0xec998f4f60ecfe06c98f664572056939cf182a30dad757aee9599c9fa731df1f` | 54507873 | success | test ETH |
