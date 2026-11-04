@@ -19,6 +19,8 @@ export function Connect() {
   const { address } = useConnection();
   const { connect, connectors, error } = useConnect();
   const { disconnect } = useDisconnect();
+  const [help, setHelp] = useState<string>();
+  const shown = help ?? (error ? explain(error) : undefined);
   if (address) {
     return (
       <button onClick={() => disconnect()} className="min-h-11 shrink-0 rounded-full border border-[var(--line)] bg-white px-4 text-sm font-medium" title="Disconnect">
@@ -26,14 +28,28 @@ export function Connect() {
       </button>
     );
   }
+  const start = () => {
+    if (!(window as { ethereum?: unknown }).ethereum) {
+      setHelp("No wallet found in this browser. Install MetaMask, or open this page in your wallet app's browser. You can try the hosted agent on the Agent page with no wallet.");
+      return;
+    }
+    setHelp(undefined);
+    if (connectors[0]) connect({ connector: connectors[0] });
+  };
   return (
+    <>
+    {shown && (
+      <p role="alert" className="fixed right-4 bottom-4 left-4 z-50 rounded-2xl bg-[var(--ink)] p-4 text-sm text-white md:left-auto md:max-w-md">
+        {shown}
+      </p>
+    )}
     <button
-      onClick={() => connectors[0] && connect({ connector: connectors[0] })}
-      title={error?.message}
+      onClick={start}
       className="min-h-11 shrink-0 rounded-full bg-[var(--ink)] px-5 text-sm font-semibold text-white transition-opacity hover:opacity-85"
     >
       Connect wallet
     </button>
+    </>
   );
 }
 

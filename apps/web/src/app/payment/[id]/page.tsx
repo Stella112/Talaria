@@ -29,7 +29,10 @@ export default function PaymentPage() {
     enabled: valid && Boolean(protect),
     queryFn: async () => {
       const logs = await client.getContractEvents({ address: protect!, abi: TalariaProtectAbi as any, fromBlock: CORE_DEPLOY_BLOCK });
-      return logs.filter((log: any) => (log.args.id ?? log.args.paymentId) === id && LABELS[log.eventName]) as any[];
+      // One transaction can hold several steps, so order those by the story, not by log position.
+      const rank = (log: any) => Object.keys(LABELS).indexOf(log.eventName);
+      const steps = logs.filter((log: any) => (log.args.id ?? log.args.paymentId) === id && LABELS[log.eventName]) as any[];
+      return steps.sort((a, b) => (a.blockNumber === b.blockNumber ? rank(a) - rank(b) : a.blockNumber < b.blockNumber ? -1 : 1));
     },
   });
 
