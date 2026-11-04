@@ -1,6 +1,6 @@
 # Demo script (under 3 minutes)
 
-Built around the money shot. **Only record what has really happened.** Show Portaldot hashes on screen. If the trust flow has not run on testnets yet, use "Version B" and label local parts `LOCAL` on screen.
+Built around the money shot. **Only record what has really happened.** Show Portaldot hashes on screen. The trust flow has run live on testnets, so every step can use real hashes.
 
 Before recording, check `pnpm stats`, have the web app and relayer running, and open `evidence/TRANSACTIONS.md`. Build Trusted Coffee's history first with `pnpm demo:trust -- --seed`, which needs real purchases and a 30-minute hold.
 
@@ -17,17 +17,6 @@ Before recording, check `pnpm stats`, have the web app and relayer running, and 
 | 2:20–2:45 | README status table and `pnpm stats` | "These are real counts from our records. We have no customers yet. The attester, relayer and arbiter are single trusted parties today, and we publish that." |
 | 2:45–3:00 | Overview | "Next: more attesters, a multi-signer bridge and mainnet. Talaria: trust-priced settlement for Portaldot." |
 
-## Version B: if tPOT has not arrived
-
-Use only what is live, and show the rest as `LOCAL`.
-
-| Time | Screen | Say |
-|---|---|---|
-| 0:00–0:20 | Overview page | Same opening. |
-| 0:20–1:00 | `evidence/TRANSACTIONS.md`, then `/pay/1` | "This is live on testnet. Ten test USDC locked on Base. Our relayer credited Portaldot. A payer with no tPOT signed once and paid invoice 1. Here it is, read from the chain." |
-| 1:00–2:10 | Terminal with `LOCAL` caption: `pnpm --filter @talaria-pay/contracts exec hardhat test test/TrustFlow.test.ts` | "This next part is a local chain, not testnet, with the Base registry stubbed. A new merchant's payment is held and disputed, refunded back through bridge-out, and negative feedback is written. Then a trusted merchant settles instantly. Our contracts for this are built, and need about 789 tPOT to deploy." |
-| 2:10–2:40 | `docs/ARCHITECTURE.md` cost table | "We measured what V3 deployment really costs, and published it, with an MIT SDK." |
-| 2:40–3:00 | README status table | "We say plainly what's live and what isn't, and what you have to trust." |
 
 ## Check before submitting
 

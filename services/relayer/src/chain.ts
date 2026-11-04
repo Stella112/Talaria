@@ -135,7 +135,8 @@ export function liveSettlement(cfg: SettlementConfig): SettlementChain & Protect
     async protectEvents(from, to) {
       if (!cfg.protect) return [];
       const logs = await cfg.portaldot.getContractEvents({ address: cfg.protect, abi: TalariaProtectAbi, fromBlock: from, toBlock: to });
-      return logs.map((log: any): ProtectEvent => ({ eventName: log.eventName, args: log.args, txHash: log.transactionHash }));
+      const ordered = [...logs].sort((a: any, b: any) => (a.blockNumber === b.blockNumber ? Number(a.logIndex) - Number(b.logIndex) : a.blockNumber < b.blockNumber ? -1 : 1));
+      return ordered.map((log: any): ProtectEvent => ({ eventName: log.eventName, args: log.args, txHash: log.transactionHash }));
     },
     async merchantOf(id) {
       const payment = (await cfg.portaldot.readContract({ address: need(cfg.protect, "TalariaProtect"), abi: TalariaProtectAbi, functionName: "payments", args: [id] })) as unknown as readonly unknown[];

@@ -22,7 +22,7 @@ export default function Remit() {
   }, []);
 
   if (!reader.addresses.remit) {
-    return <Notice>The remittance contract is built and tested locally, but it is not deployed on this network yet.</Notice>;
+    return <Notice>This remittance contract runs on Base Sepolia, with real transactions in the evidence log. It is not on Portaldot yet, so this page cannot use it from here.</Notice>;
   }
 
   return (

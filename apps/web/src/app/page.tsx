@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { formatEther } from "viem";
 import { Notice, Pill } from "@/components/ui";
+import { baseSepoliaDeployments } from "@talaria-pay/sdk";
 import { client, LOCKBOX, reader, short, tusd } from "@/lib/talaria";
 
 const LOW_TPOT = 8n * 10n ** 18n; // one new invoice costs about 7.7 tPOT
@@ -17,14 +18,17 @@ const STEPS = [
   ["04", "Receipt", "Every payment leaves a verifiable event.", "bg-[var(--ink)] text-white"],
 ] as const;
 
+const BASE_RAILS: { name: string; text: string; contract: string }[] = [
+  { name: "Pay-per-call", text: "HTTP 402 APIs paid with vouchers that settle in one transaction.", contract: "TalariaChannels" },
+  { name: "Subscriptions", text: "Merchant plans charged only when due, within a cap.", contract: "TalariaSubscriptions" },
+  { name: "Streaming", text: "Per-second payments with computed accrual.", contract: "TalariaStreams" },
+  { name: "Remittance", text: "Send to an address or a claim link, cancellable until claimed.", contract: "TalariaRemit" },
+];
+
 const RAILS: { name: string; text: string; key?: keyof Addresses }[] = [
   { name: "Checkout", text: "Invoices, payment links and refunds, paid gaslessly." },
   { name: "Buyer protection", text: "Trust decides the hold. Buyers can dispute while it lasts, and a trusted arbiter resolves it.", key: "protect" },
   { name: "Bridge-out", text: "Move funds back to Base, with replay protection on both sides.", key: "bridgeOut" },
-  { name: "Pay-per-call", text: "HTTP 402 APIs paid with vouchers that settle in one transaction.", key: "channels" },
-  { name: "Subscriptions", text: "Merchant plans charged only when due, within a cap.", key: "subscriptions" },
-  { name: "Streaming", text: "Per-second payments with computed accrual.", key: "streams" },
-  { name: "Remittance", text: "Send to an address or a claim link, cancellable until claimed.", key: "remit" },
 ];
 
 const PROOF = [
@@ -144,7 +148,7 @@ export default function Overview() {
               <div key={rail.name} className="flex flex-col rounded-3xl bg-[var(--surface)] p-6 md:p-7">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-2xl font-semibold">{rail.name}</h3>
-                  <Pill tone={live ? "good" : "orange"}>{live ? "Deployed" : "Built, not deployed"}</Pill>
+                  <Pill tone={live ? "good" : "orange"}>{live ? "Live on Portaldot" : "Built, not deployed"}</Pill>
                 </div>
                 <p className="mt-2 text-[var(--muted)]">{rail.text}</p>
               </div>
@@ -157,6 +161,23 @@ export default function Overview() {
             </div>
             <p className="mt-2 text-white/75">Session keys with limits per payment and per day, an approval queue for anything over them, and an MCP server.</p>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pt-16 md:px-6 md:pt-20">
+        <Pill>Multi-chain rails</Pill>
+        <h2 className="mt-4 max-w-2xl text-4xl font-semibold md:text-5xl">Run anywhere, settle on Portaldot</h2>
+        <p className="mt-3 max-w-2xl text-[var(--muted)]">These rails run on Base Sepolia with real transactions. Merchants settle their proceeds to Portaldot through the bridge, as a separate step, with one trusted relayer.</p>
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          {BASE_RAILS.map((rail) => (
+            <div key={rail.name} className="flex flex-col rounded-3xl bg-[var(--surface)] p-6 md:p-7">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-2xl font-semibold">{rail.name}</h3>
+                <Pill tone={baseSepoliaDeployments[rail.contract] ? "good" : "orange"}>{baseSepoliaDeployments[rail.contract] ? "Live on Base Sepolia" : "Built, not deployed"}</Pill>
+              </div>
+              <p className="mt-2 text-[var(--muted)]">{rail.text}</p>
+            </div>
+          ))}
         </div>
       </section>
 

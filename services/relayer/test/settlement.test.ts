@@ -127,6 +127,15 @@ describe("runReleaseKeeper", () => {
   });
 });
 
+describe("runReleaseKeeper with settled payments", () => {
+  it("forgets a hold the contract says is no longer held", async () => {
+    const db = new Db();
+    db.addHold(5n, 10);
+    await runReleaseKeeper(fake({ release: vi.fn(async () => { throw new Error('The contract function "release" reverted: NotHeld()'); }) }), db, 100);
+    expect(db.dueHolds(100)).toEqual([]);
+  });
+});
+
 describe("webhook registration", () => {
   const stubChain = {} as any;
 

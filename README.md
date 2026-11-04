@@ -15,13 +15,15 @@
 | Part | Status |
 |---|---|
 | Base Sepolia → Portaldot checkout: lock, relayer credit, gasless invoice payment | **Live on testnet**, see [evidence](evidence/TRANSACTIONS.md) |
-| `TalariaLockboxV2` on Base Sepolia | **Deployed.** No lock or release through it yet |
-| `TalariaProtect` (holds, disputes, refunds, trust tiers, mandates, agent caps) and `TalariaBridgeOut` | **Deployed on testnet.** No payment has gone through them yet |
-| Trust attester, reputation reads, feedback to Base, webhooks, idempotency | Built and tested with stubs. One real read of the registries has run. **No feedback has been written yet** |
-| Hosted agent, MCP server, x402 v2 headers | Built and tested locally. **Not hosted yet** |
-| Subscriptions, streams, pay-per-call, remittance contracts | Built and tested on a local chain. **Not deployed** |
+| `TalariaLockboxV2` on Base Sepolia | **Live.** Locks and a bridge-out release have gone through it |
+| Trust-priced settlement: `TalariaProtect` and `TalariaBridgeOut`, mandates, holds, dispute, refund, bridge-out, feedback to Base | **Live on testnet, end to end**, see [evidence](evidence/TRANSACTIONS.md) |
+| Subscriptions, streams, pay-per-call, remittance | **Live on Base Sepolia, not on Portaldot.** They run on a second copy of Core, and proceeds settle to Portaldot through the bridge as a separate step |
+| Webhooks, idempotency | Built and tested with stubs. Not run against a real merchant |
+| Hosted agent, relayer | **Running on a VPS.** The relayer's tPOT is limited, so gasless actions pause at a set floor |
+| MCP server, x402 v2 headers | Built and tested locally |
+| BNB testnet | Support is in the relayer and scripts. **Not deployed:** it needs test BNB |
 
-The trust-priced demo below runs end to end on a local Hardhat chain in `contracts/test/TrustFlow.test.ts`, with the Base registry stubbed. It has not run on testnets yet.
+**The live flow:** a new merchant's payment is held, disputed and refunded, the refund returns to Base, and negative feedback lands on Base. Then a merchant with real history settles instantly. Trusted Coffee's score of 100 comes from real settled demo purchases by us, not from customers.
 
 ## How trust-priced settlement works
 
@@ -108,6 +110,11 @@ Off-chain: a relayer (bridge, intents, keeper, settler), TypeScript SDK, hosted 
 | MockUSDC | `0x44bc5dcfba3f36fb03623a27e553cdbb0b8877f0` | `0x49941b0e06991949e90b9949a99b40f3c28abba69f9587b46627fae0ba14a315` |
 | TalariaLockbox (original) | `0x67e3e8d6185f2e57c60d63b81fc1376ff120b467` | `0x5a69a2b734e30c6ceb09ca26d4742b21e22667131daaaa1e5faa776ae68ad584` |
 | TalariaLockboxV2 | `0xc8675f5a54bdfd78d6ffbed8551393c8e462b1bd` | `0xc55ec5fe5bc91ed22bbf528f1bb34e14fd1849713a0dd5a9241d22fdb419750d` |
+| TalariaCore (Base copy) | `0x41b0e2fa8a49d5289f9f03b46228b6362da99455` | `0xe9e5c9098a38a4a51314cd6767d643960edef8813a50a57642b35f5102bb44ac` |
+| TalariaSubscriptions (Base copy) | `0x394cb7bd33e1745a1f4b3d70bef7a8f742211627` | `0xc3e13f52bd4766cd5c1e3acca232ab2d347db2678fa9e5a6ffa6674903c0a4e6` |
+| TalariaStreams (Base copy) | `0xf44780000c3b19f8dff8c08ba0b66518e8994a9f` | `0xbe6917c43aaa01ebdf2d6cb2aa4488f89ee2d6e513b860c96e2d3ce6b1dba473` |
+| TalariaChannels (Base copy) | `0x31849ec8ed12c615c02292a664988281c0dece67` | `0xaced873177fd79c02e2fa51fd41b8f1312a92a751b3cb477aa784ae5ae9cc38c` |
+| TalariaRemit (Base copy) | `0x126e6de91575c17d02d76b0f723c7bfab6c536d1` | `0xa52ed76315c96fe967c6ba9f1c5e9de1470c5421da703ce3eef77ad0d03854b4` |
 
 **ERC-8004 registries used** (run by their maintainers, not by us): Identity `0x8004A818BFB912233c491871b3d84c89A494BD9e`, Reputation `0x8004B663056A597Dffe9eCcC1965A193B7388713`. We confirmed code at both addresses on Base Sepolia.
 
@@ -118,19 +125,30 @@ Off-chain: a relayer (bridge, intents, keeper, settler), TypeScript SDK, hosted 
 | Lock 10 mUSDC | Base Sepolia | `0x1e8fddc7ce961eee32eb158aeb1eeb8dd669b1f993366a9248ac013eb0d00364` |
 | Relayer credits the payer | Portaldot | `0xb0d9b610ecdb280b356c9be2c9919b4770f470b662ed9d0907297fa8be8e9bf1` |
 | Payer with 0 tPOT pays invoice 1 | Portaldot | `0x7fe8f26f10f5ad7f2e9a8a06348eef6ba26a0515697a778dd2e15059e45000ab` |
+| Agent buys from New Shop: held 30 min | Portaldot | `0x5f2abd215e1ade9126a89ead81717f9135a862eb11a4b5dc481092bf34af073e` |
+| Buyer disputes | Portaldot | `0x803e74783c16aff7b821740284054c388e788fb4857f6fb0b68bc435dcda161b` |
+| Arbiter refunds in full | Portaldot | `0x775a18c5d87ae0ac00710b5d8c4e67dbf319bc779d8be7736126cc457c5e1047` |
+| Refund bridges out | Portaldot | `0xcb378549d30e76351f0a92c08e1ff237664fd7d93b876757c8d1f006c54670b9` |
+| Released to the buyer | Base Sepolia | `0x4e5b8ba1e6099a3330106c512e6884d476ba0c8d9346de269ed2a7401dfa879d` |
+| Negative feedback for New Shop | Base Sepolia | `0x6b36aac7530da0405612d376e463f54ad9ddac4f358b4ea7a4afb1702a85a61e` |
+| Agent buys from Trusted Coffee: instant | Portaldot | `0xff4f51b92c5d5e3edc2e86f19e80f2c5484a76b664d4038fb36fcda633ceb10a` |
+| Positive feedback for Trusted Coffee | Base Sepolia | `0xa937c932653e6eeac7189248f6dbc22fbde138422fd8aaaf8e9304079c985e4f` |
 
 All transactions and costs: [evidence/TRANSACTIONS.md](evidence/TRANSACTIONS.md).
 
 ## Traction
 
-From `pnpm stats`, read at 2026-11-03T21:12Z. These are our own test transactions, not customers. We have no users or revenue yet.
+From `pnpm stats` and the relayer's records, on 2026-11-04. These are our own test transactions, not customers. We have no users or revenue yet.
 
 | Metric | Count |
 |---|---|
-| Contracts deployed | 2 on Portaldot, 3 on Base Sepolia |
-| Invoices created, receipts issued | 1, 1 |
-| Protected payments, disputes, feedback written, subjects registered | 0 (contracts not deployed yet) |
-| Recorded transactions | 13 |
+| Contracts deployed | 4 on Portaldot, 8 on Base Sepolia |
+| Invoices created, receipts issued on Portaldot | 1, 6 |
+| Protected payments on Portaldot, released | 5, 4 |
+| Disputes opened, resolved | 1, 1 |
+| Feedback written to Base | 9 |
+| Subjects registered in ERC-8004 | 3 |
+| Recorded transactions | 85 |
 
 ## Business
 
@@ -141,7 +159,7 @@ From `pnpm stats`, read at 2026-11-03T21:12Z. These are our own test transaction
 
 ## How this maps to the judging criteria
 
-- **Technical Feasibility (30%):** deployed contracts, a live cross-chain payment with saved receipts, a tested stack, and a commit history made during the event. The trust flow's testnet run is pending tPOT.
+- **Technical Feasibility (30%):** deployed contracts, a live cross-chain payment with saved receipts, a tested stack, and a commit history made during the event. The trust flow has run live on testnets.
 - **Innovation (30%):** trust-priced settlement and a two-way reputation bridge between Base and Portaldot.
 - **Ecosystem Contribution (20%):** an open-source SDK, MCP server and address tools, plus measured V3 costs.
 - **Business Potential (20%):** see [Business](#business).
@@ -231,14 +249,16 @@ pnpm stats
 - **Bridge-out locks tUSD, it does not burn it.** The deployed token has no burn function, so funds move to an address that can never spend them, and total supply stays the same.
 - **No third-party audit,** and test tokens only. Some contract code is hand-written to save deposits.
 - **Tier values are fixed at deploy** to save bytecode, so changing them needs a redeploy.
+- **Limited tPOT.** Our testnet budget is why four rails run on Base Sepolia, and why the relayer's gasless actions are capped.
+- **Base rails are a separate copy.** They hold their own balances, and proceeds reach Portaldot only when settled through the single trusted relayer.
 - **Not ERC-4337.** This is account-abstraction-style: signed intents, session keys and sponsored gas through a relayer.
 
 Full list: [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Roadmap
 
-1. Deploy `TalariaProtect` and `TalariaBridgeOut`, and run the trust flow on testnets.
-2. Deploy the four remaining rails.
+1. Deploy the four rails directly on Portaldot.
+2. BNB testnet as a second source chain.
 3. Multiple attesters, a multi-signer bridge, and more source chains.
 4. Independent audit, then Portaldot mainnet.
 5. A reputation API, and licensed off-ramp partners.

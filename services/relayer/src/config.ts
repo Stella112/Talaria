@@ -1,4 +1,4 @@
-import { baseSepolia } from "viem/chains";
+import { baseSepolia, bscTestnet } from "viem/chains";
 
 /** A chain funds can come from and go back to. Adding BNB later needs a deploy and one entry here. */
 export type SourceChain = {
@@ -10,7 +10,7 @@ export type SourceChain = {
   confirmations: bigint;
 };
 
-export function sourceChains(env: Record<string, string | undefined>, deployed: Record<string, `0x${string}` | undefined>): SourceChain[] {
+export function sourceChains(env: Record<string, string | undefined>, deployed: Record<string, `0x${string}` | undefined>, bnb: Record<string, `0x${string}` | undefined> = {}): SourceChain[] {
   return [
     {
       chainId: baseSepolia.id,
@@ -19,6 +19,14 @@ export function sourceChains(env: Record<string, string | undefined>, deployed: 
       lockbox: deployed.TalariaLockboxV2 ?? deployed.TalariaLockbox,
       token: deployed.MockUSDC,
       confirmations: 2n,
+    },
+    {
+      chainId: bscTestnet.id,
+      name: "BNB testnet",
+      rpc: env.BNB_TESTNET_RPC || "https://data-seed-prebsc-1-s1.binance.org:8545",
+      lockbox: bnb.TalariaLockboxV2,
+      token: bnb.MockUSDC,
+      confirmations: 3n,
     },
   ];
 }

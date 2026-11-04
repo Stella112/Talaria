@@ -84,3 +84,4 @@
 | settlement (Base Sepolia) | withdraw proceeds | `0x42b5ff34d553f5c5d71c044cd099c808d2266b9261267cc648bbda68b6e3a42e` | 54507838 | success | test ETH |
 | settlement (Base Sepolia) | approve lockbox | `0x8c436af24bcc8a97c9f1046aee49d1276c44b13514b998c65f7da0975aa00f66` | 54507857 | success | test ETH |
 | settlement (Base Sepolia) | lock proceeds | `0xec998f4f60ecfe06c98f664572056939cf182a30dad757aee9599c9fa731df1f` | 54507873 | success | test ETH |
+| bridge-out (Base Sepolia) | release to buyer | `0x4e5b8ba1e6099a3330106c512e6884d476ba0c8d9346de269ed2a7401dfa879d` | 54507420 | success | sent by the VPS relayer |

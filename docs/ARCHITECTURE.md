@@ -33,7 +33,10 @@ flowchart TB
   subgraph P[Portaldot V3 testnet]
     C[TalariaCore]
     T[TalariaUSD]
-    RL[Rail contracts, not deployed yet]
+    PR[TalariaProtect and TalariaBridgeOut]
+  end
+  subgraph B2[Base Sepolia rails]
+    RL[Subscriptions, streams, channels, remit, on a second Core]
   end
   W --> S
   A --> S
@@ -47,7 +50,7 @@ flowchart TB
   K -->|charge| RL
   V -->|redeemBatch| RL
   C <--> T
-  C <--> RL
+  C <--> PR
 ```
 
 ## Payment flow

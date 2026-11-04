@@ -18,9 +18,9 @@ Reputation from any chain decides how fast money moves on Portaldot, and what ha
 
 ## 4. Proof it works
 - Live: 10 mUSDC locked on Base Sepolia, credited on Portaldot, and invoice 1 paid by a payer holding 0 tPOT. Show the three hashes from the README.
-- Live registries: confirmed on Base Sepolia, with a real read.
-- Tested locally: the full money shot through the real SDK, relayer and contracts.
-- Not deployed yet: `TalariaProtect` and `TalariaBridgeOut`, which need about 789 tPOT. Say so. Replace this line once they are live.
+- Live: the full money shot on testnets. A new merchant's payment held, disputed, refunded to Base, negative feedback written, then instant settlement for a merchant with real history. Show the hashes from the README.
+- Live: three ERC-8004 identities with real feedback on Base Sepolia.
+- Live on Base Sepolia, settling to Portaldot: subscriptions, streaming, pay-per-call and remittance. Say they are not on Portaldot itself.
 
 ## 5. Why Portaldot is essential
 - V3's EVM compatibility through pallet-revive lets standard Solidity settle on Portaldot.

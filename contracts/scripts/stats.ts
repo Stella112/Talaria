@@ -1,5 +1,5 @@
 // Real numbers only: every figure is read from the chain or our own records. Sends nothing.
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { TalariaCoreAbi, TalariaProtectAbi } from "../../packages/sdk/src/generated";
 import { Db } from "../../services/relayer/src/db";
@@ -32,7 +32,7 @@ async function main() {
     trustApplied: await count("TrustApplied"),
     subjectsRegistered: existsSync(identities) ? Object.keys(JSON.parse(readFileSync(identities, "utf8"))).length : 0,
     recordedTransactions: rows.length,
-    feedbackWrittenToBase: existsSync(database) ? new Db(database).countFeedback() : 0,
+    feedbackWrittenToBase: existsSync(database) ? new Db(database).countFeedback() : (readFileSync(resolve(__dirname, "../../evidence/TRANSACTIONS.md"), "utf8").match(/^| feedback (Base Sepolia)/gm) ?? []).length,
     note: "null means the contract is not deployed yet. Log-based counts may undercount if the RPC has pruned logs.",
   };
   console.log(JSON.stringify(stats, null, 2));

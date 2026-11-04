@@ -30,7 +30,7 @@ export default function Streams() {
             <ActionButton secondary label="Stop stream (sender)" disabled={!streamId} run={async () => (await signer()).stopStream(BigInt(streamId))} />
           </>
         ) : (
-          <Notice>The streams contract is built and tested locally, but it is not deployed on this network yet.</Notice>
+          <Notice>This streams contract runs on Base Sepolia, with real transactions in the evidence log. It is not on Portaldot yet, so this page cannot use it from here.</Notice>
         )}
       </Card>
       <Card title="Subscribe" note="Approve once. Charges only happen when a period is due, up to the plan's limit.">
@@ -42,7 +42,7 @@ export default function Streams() {
             <ActionButton secondary label="Cancel subscription" disabled={!subId} run={async () => (await signer()).cancel(BigInt(subId))} />
           </>
         ) : (
-          <Notice>The subscriptions contract is built and tested locally, but it is not deployed on this network yet.</Notice>
+          <Notice>This subscriptions contract runs on Base Sepolia, with real transactions in the evidence log. It is not on Portaldot yet, so this page cannot use it from here.</Notice>
         )}
       </Card>
     </NeedsWallet>

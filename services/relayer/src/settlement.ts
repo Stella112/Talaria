@@ -104,7 +104,9 @@ export async function runReleaseKeeper(chain: SettlementChain, db: Db, now = Mat
       db.removeHold(id);
       released++;
     } catch (error) {
-      console.warn(`[keeper] release ${id} failed: ${String(error)}`);
+      // Already settled, disputed or refunded: there is nothing left to release.
+      if (String(error).includes("NotHeld")) db.removeHold(id);
+      else console.warn(`[keeper] release ${id} failed: ${String(error).split("\n")[0]}`);
     }
   }
   return released;
