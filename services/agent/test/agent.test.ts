@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseCommand, understand } from "../src/parser";
 import { anthropicParser } from "../src/anthropic";
-import { RateLimiter } from "../src/limits";
+import { limitsFromEnv, RateLimiter } from "../src/limits";
 import { buildAgent } from "../src/server";
 
 const A = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
@@ -136,6 +136,13 @@ describe("hosted agent", () => {
     expect((await app.inject({ method: "POST", url: "/rate", payload })).statusCode).toBe(409);
     expect((await app.inject({ method: "POST", url: "/rate", payload: { paymentId: "4", stars: 9 } })).statusCode).toBe(400);
     expect(rate).toHaveBeenCalledTimes(1);
+  });
+
+  it("reads hourly limits from the environment, and ignores bad values", () => {
+    const set = limitsFromEnv({ AGENT_EXECUTE_PER_HOUR: "2", AGENT_PARSE_PER_HOUR: "nonsense" });
+    expect([set.execute.allow("a"), set.execute.allow("a"), set.execute.allow("a")]).toEqual([true, true, false]);
+    for (let i = 0; i < 60; i++) expect(set.parse.allow("a")).toBe(true);
+    expect(set.parse.allow("a")).toBe(false);
   });
 
   it("resets the limit after its window", () => {

@@ -2,7 +2,7 @@ import type { Talaria } from "@talaria-pay/sdk";
 import Fastify from "fastify";
 import { z } from "zod";
 import { execute, type HostedContext } from "./execute";
-import { RateLimiter } from "./limits";
+import { limitsFromEnv, RateLimiter } from "./limits";
 import { understand, type Llm } from "./parser";
 import type { Action } from "./schema";
 import { actionSchema, isReadOnly, preview } from "./schema";
@@ -24,7 +24,7 @@ export type AgentOptions = {
 export function buildAgent(talaria: Talaria, llm?: Llm | ((command: string) => Promise<Action | null>), fetchImpl?: typeof fetch, options: AgentOptions = {}) {
   // Only trust forwarded addresses behind a known proxy, or anyone could fake an IP to dodge the limits.
   const app = Fastify({ logger: false, bodyLimit: 8_192, trustProxy: process.env.TRUST_PROXY === "1" });
-  const limits = options.limits ?? { parse: new RateLimiter(60, 3_600_000), execute: new RateLimiter(10, 3_600_000) };
+  const limits = options.limits ?? limitsFromEnv(process.env);
   const rated = new Set<string>();
   app.setErrorHandler((error, _request, reply) => reply.code(400).send({ error: (error as Error).message }));
 
