@@ -32,3 +32,9 @@
 | identity (Base Sepolia) | register Talaria Autopilot | `0xb3486e7e634ca4c6b4def2fdac4eaa7385c8a891d03d583b6f9fab61d696f471` | 54493369 | success | test ETH |
 | identity (Base Sepolia) | register Trusted Coffee | `0x6c2a119d1b86f09cac69086581775adcd2307a17c5b41a8ab56bdb11044942b1` | 54493388 | success | test ETH |
 | identity (Base Sepolia) | register New Shop | `0xd3caa7cee1c20a085f520a488ea07a62e56c7d926fb36fd5ebd36cda0bef9385` | 54493408 | success | test ETH |
+| bridge (Base Sepolia) | mint mUSDC | `0x337448411e83a701e988c85b2de35739996acd3a92111d5eace0e0bb2bbb591a` | 54494960 | success | test ETH |
+| bridge (Base Sepolia) | approve lockbox | `0x584b4db964e8c5ea328cb3e7f6efea32c05e923dffc778d47f86b49a921afb42` | 54494974 | success | test ETH |
+| bridge (Base Sepolia) | lock on Base | `0x9e0d9dab7ec91021e187e64a870f82ee214b05a459548c41476964df7c020f31` | 54494988 | success | test ETH |
+| seed | Trusted Coffee purchase 1 | `0x62c6bb37d86cac223b69c78831778c908f7fc2f91231fd1707a83dcc18fb3357` | 324540 | success | paid by relayer |
+| seed | Trusted Coffee purchase 2 | `0x5767e2b750a444051568c02679259fcfe9b13e125e321c7df85898fef5b00e17` | 324542 | success | paid by relayer |
+| seed | Trusted Coffee purchase 3 | `0x8b4bdfc927db2ef3aa98f1a35a937f8e6dc3222f12e9c7a293838f841b1d6361` | 324544 | success | paid by relayer |
