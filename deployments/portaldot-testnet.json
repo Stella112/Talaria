@@ -28,5 +28,31 @@
     "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
     "timestampUTC": "2026-11-03T11:34:52.128Z",
     "gitCommit": "bacb9fc469f2b4e04bbb3bba51e7dace282b9adb"
+  },
+  {
+    "name": "TalariaBridgeOut",
+    "address": "0x40b43930a97f328bc3325adb22ec0f01a5432320",
+    "deployTxHash": "0xb91d91e686f2275cce227b0437987498a5c1c1dbc4dabf7a1d976d02ee666570",
+    "blockNumber": "324147",
+    "runtimeBytecodeBytes": 1161,
+    "depositEstimateTPOT": 107.67410000000001,
+    "depositActualTPOT": null,
+    "totalBalanceChangeTPOT": "103.818410366669107085",
+    "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "timestampUTC": "2026-11-04T18:56:28.976Z",
+    "gitCommit": "d316300318a9b41ecf718d37dbffe6940e6758ee"
+  },
+  {
+    "name": "TalariaProtect",
+    "address": "0xc2e44329d071dd9683f2050e943dde19dac145e1",
+    "deployTxHash": "0xb702e7c29bccb15b55fa1bdc9b18405736272821a58e6ece0e08dfaa3355a692",
+    "blockNumber": "324149",
+    "runtimeBytecodeBytes": 8401,
+    "depositEstimateTPOT": 673.1181,
+    "depositActualTPOT": null,
+    "totalBalanceChangeTPOT": "673.17691208681594675",
+    "deployer": "0xD452eed08e545d186c8a87e4c9001fc08A60Bab7",
+    "timestampUTC": "2026-11-04T18:56:40.691Z",
+    "gitCommit": "d316300318a9b41ecf718d37dbffe6940e6758ee"
   }
 ]

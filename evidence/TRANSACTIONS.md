@@ -13,3 +13,8 @@
 | setup | createInvoice | `0xf96e22b24511a1ccb8dc18a6808ab644b38c6bd6b3ce8439d8ec43fa01b84892` | 306065 | success | 7.70501034577650652 tPOT |
 | checkout | payInvoice (gasless intent) | `0x7fe8f26f10f5ad7f2e9a8a06348eef6ba26a0515697a778dd2e15059e45000ab` | 306067 | success | 15.41381374277931452 tPOT, paid by relayer |
 | deploy (Base Sepolia) | TalariaLockboxV2 | `0xc55ec5fe5bc91ed22bbf528f1bb34e14fd1849713a0dd5a9241d22fdb419750d` | 54091122 | success | test ETH |
+| deploy | TalariaBridgeOut | `0xb91d91e686f2275cce227b0437987498a5c1c1dbc4dabf7a1d976d02ee666570` | 324147 | success | 103.818410366669107085 tPOT |
+| deploy | TalariaProtect | `0xb702e7c29bccb15b55fa1bdc9b18405736272821a58e6ece0e08dfaa3355a692` | 324149 | success | 673.17691208681594675 tPOT |
+| setup | setModule protect | `0xa6ba85d7bb4639bfade3f745bcd183706e4b0601eb378c2a16707627b0e8c5ef` | 324151 | success | 3.860208249691371145 tPOT |
+| setup | setModule bridge-out | `0x617f04c5d33606ffc7231d6984bf7b963ee9a58896633d8552ffd0ca5dc0ff66` | 324153 | success | 3.86020824965559503 tPOT |
+| setup | setDest base-sepolia | `0xde30b6fce8e0125aff40033316b745382161c0b4cdb4280a842713cccf13c130` | 324155 | success | 3.86020817387364545 tPOT |
