@@ -40,6 +40,42 @@ async function callAgent(path: string, body: unknown) {
   return json;
 }
 
+/** The hosted agent. It needs no wallet, so anyone can try it. */
+function Autopilot() {
+  const [command, setCommand] = useState("buy 1 tUSD from Trusted Coffee");
+  const [parsed, setParsed] = useState<Parsed>();
+  const [result, setResult] = useState<string>();
+
+  return (
+    <Card title="Autopilot" note="No wallet needed. This hosted agent signs with its own key, under on-chain limits, and buys with test tokens from a demo buyer account. Nothing runs until you confirm the preview.">
+      <Field label="Command" value={command} onChange={(e) => setCommand(e.target.value)} />
+      <ActionButton
+        secondary
+        label="Preview"
+        run={async () => {
+          setResult(undefined);
+          setParsed(undefined);
+          setParsed(await callAgent("/parse", { command }));
+        }}
+      />
+      {parsed && (
+        <>
+          <Notice>{parsed.preview}</Notice>
+          <ActionButton
+            label={parsed.needsConfirmation ? "Confirm and run" : "Run"}
+            run={async () => {
+              const response = await callAgent("/execute", { action: parsed.action, confirmed: true });
+              setResult(JSON.stringify(response.result, null, 2));
+              return response.result?.txHash;
+            }}
+          />
+        </>
+      )}
+      {result && <pre className="overflow-x-auto rounded-2xl bg-white p-3 text-xs">{result}</pre>}
+    </Card>
+  );
+}
+
 export default function Agent() {
   const { address } = useConnection();
   const [key, setKey] = useState("");
@@ -47,9 +83,6 @@ export default function Agent() {
   const [maxPerDay, setMaxPerDay] = useState("20");
   const [days, setDays] = useState("7");
   const [rails, setRails] = useState<number>(RailBit.checkout | RailBit.channels);
-  const [command, setCommand] = useState("pay invoice 1");
-  const [parsed, setParsed] = useState<Parsed>();
-  const [result, setResult] = useState<string>();
 
   const pending = useQuery({
     queryKey: ["pending", address],
@@ -79,6 +112,8 @@ export default function Agent() {
   const railOptions = Object.entries(RailBit).filter(([name]) => name !== "account");
 
   return (
+    <>
+    <Autopilot />
     <NeedsWallet>
       <Card title="Approve an agent purchase" note="A mandate lets one agent key pay one merchant, up to one amount, for 30 minutes and one use. Nothing else is allowed. Limits are enforced on-chain.">
         {reader.addresses.protect ? (
@@ -143,33 +178,6 @@ export default function Agent() {
         <ActionButton secondary label="Revoke key" disabled={!/^0x[0-9a-fA-F]{40}$/.test(key)} run={async () => (await signer()).revokeSessionKey(key as Address)} />
       </Card>
 
-      <Card title="Autopilot" note="Commands go to the agent service, which signs with its own session key. Nothing runs until you confirm the preview.">
-        <Field label="Command" value={command} onChange={(e) => setCommand(e.target.value)} />
-        <ActionButton
-          secondary
-          label="Preview"
-          run={async () => {
-            setResult(undefined);
-            setParsed(undefined);
-            setParsed(await callAgent("/parse", { command }));
-          }}
-        />
-        {parsed && (
-          <>
-            <Notice>{parsed.preview}</Notice>
-            <ActionButton
-              label={parsed.needsConfirmation ? "Confirm and run" : "Run"}
-              run={async () => {
-                const response = await callAgent("/execute", { action: parsed.action, confirmed: true });
-                setResult(JSON.stringify(response.result, null, 2));
-                return response.result?.txHash;
-              }}
-            />
-          </>
-        )}
-        {result && <pre className="overflow-x-auto rounded-2xl bg-white p-3 text-xs">{result}</pre>}
-      </Card>
-
       <Card title="Waiting for your approval" note="Agent payments over their limits wait here. Approving or rejecting is a direct transaction, so this wallet needs a little tPOT.">
         {pending.data?.length ? (
           pending.data.map((item) => {
@@ -218,5 +226,6 @@ export default function Agent() {
         )}
       </Card>
     </NeedsWallet>
+    </>
   );
 }
