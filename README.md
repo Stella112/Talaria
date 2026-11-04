@@ -241,7 +241,8 @@ pnpm stats
 
 ## How a judge can try it
 
-1. **No wallet needed:** open the web app. The overview reads the chain live, and `/pay/1` shows invoice 1 and who paid it.
+1. **No wallet needed:** open https://talaria-pi.vercel.app. The overview reads the chain live, `/pay/1` shows invoice 1 and who paid it, and `/payment/5` shows a full payment timeline.
+   On `/agent`, try the hosted agent: "what is the trust of trusted coffee" reads Base, and "buy 1 tUSD from Trusted Coffee" makes a real testnet purchase. Purchases spend the relayer's limited tPOT, so they are capped and may pause.
 2. **Check the evidence:** look up any hash above through `https://test-evm-rpc-v3.portaldot.dev`, or read the saved receipts in `evidence/`.
 3. **With a wallet:** add a network with chain ID `420420777` and that RPC URL. The app can switch networks for you. Signed actions need no tPOT, but the relayer must be running and funded, and it has very little tPOT right now, as the overview page shows. `Claim 1,000 tUSD` is a direct transaction that needs your own tPOT.
 
