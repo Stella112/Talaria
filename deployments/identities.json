@@ -1,0 +1,17 @@
+{
+  "Talaria Autopilot": {
+    "wallet": "0xa45d68671A6BF91134b9aBB9fd2E904985201056",
+    "agentId": "10589",
+    "registerTx": "0xb3486e7e634ca4c6b4def2fdac4eaa7385c8a891d03d583b6f9fab61d696f471"
+  },
+  "Trusted Coffee": {
+    "wallet": "0x98C89a07e45A33f793DD085D4E8EB630711c52f2",
+    "agentId": "10590",
+    "registerTx": "0x6c2a119d1b86f09cac69086581775adcd2307a17c5b41a8ab56bdb11044942b1"
+  },
+  "New Shop": {
+    "wallet": "0x6c05cE2B9Efec7F9Ee6fdC0888f79E7F5c5BC15A",
+    "agentId": "10591",
+    "registerTx": "0xd3caa7cee1c20a085f520a488ea07a62e56c7d926fb36fd5ebd36cda0bef9385"
+  }
+}
