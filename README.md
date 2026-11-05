@@ -1,18 +1,45 @@
-# Talaria
+<p align="center"><img src="apps/web/public/logo.png" alt="Talaria" width="360"></p>
 
-**Stripe for Portaldot, with a refund button.** Crypto payments for people and AI agents. Talaria holds payments to new sellers so buyers can get their money back, pays proven sellers instantly, and gives agents spending limits that grow with their reputation.
+<h3 align="center">Stripe for Portaldot, with a refund button.</h3>
 
-"Stripe" is only a comparison. Talaria has no link to Stripe.
+<p align="center">Crypto payments for people and AI agents. Proven sellers are paid instantly. New sellers' payments are held, so buyers can get their money back. Agents get spending limits that grow with their reputation.</p>
 
-The mechanism behind it is trust-priced settlement: reputation on Base decides how fast money moves on Portaldot, and what settles on Portaldot writes reputation back. A refund comes from the merchant, or from a dispute during the hold, decided by a trusted arbiter.
+<p align="center">
+  <a href="https://talaria-pi.vercel.app"><b>Live app</b></a> ·
+  <a href="https://talaria-pi.vercel.app/agent">Try the agent, no wallet</a> ·
+  <a href="https://talaria-pi.vercel.app/docs">Docs</a> ·
+  <a href="evidence/TRANSACTIONS.md">Every transaction</a>
+</p>
 
-> Testnet only. tUSD and mUSDC are test tokens with no value. Built for the Portaldot Hacker House 2026, track: Multi-Chain & Cross-Chain Infra.
+> Testnet only. tUSD and mUSDC are test tokens with no value. Built for the Portaldot Hacker House 2026, track: Multi-Chain & Cross-Chain Infra. "Stripe" is only a comparison: Talaria has no link to Stripe.
 
-## Three pillars
+## The problem
 
-1. **Pay from anywhere.** Lock on Base Sepolia, get credited on Portaldot and pay gaslessly. Bridge-out sends funds back.
-2. **Agents you can trust.** Mandates bind an agent to chosen merchants and amounts. Its spending cap rises with its own reputation.
-3. **Money that can come back.** Buyer protection, disputes and refunds, with the hold length set by the merchant's reputation.
+- **Crypto payments can't be undone.** If a seller doesn't deliver, the buyer has no way back. So people don't pay strangers, and everyday commerce stays away from crypto.
+- **AI agents can't safely hold money.** Giving an agent a wallet gives it everything, with no limits and no audit trail.
+- **Trust doesn't travel.** A seller's good record on one chain counts for nothing on another, and Portaldot merchants are cut off from buyers on other chains.
+
+## The idea: trust-priced settlement
+
+Reputation decides how fast money moves on Portaldot, and every outcome on Portaldot writes reputation back.
+
+1. **Pay from anywhere.** Lock test USDC on Base Sepolia or BNB testnet, get credited on Portaldot, and pay with no gas. Bridge-out sends funds back to Base.
+2. **Money that can come back.** Before a payment settles, an attester reads the seller's ERC-8004 reputation on Base. Proven sellers are paid instantly. New sellers' payments are held, so the buyer can dispute, and merchants can refund in full or in part at any time.
+3. **Agents you can trust.** Session keys and signed mandates bind an agent to chosen merchants and amounts, and its spending cap rises with its own reputation.
+
+When a payment is released, or a dispute ends in a refund, feedback is written back to Base. Reputation grows from what really happened, and it's portable.
+
+## It works: real runs on testnets
+
+| What happened | Proof |
+|---|---|
+| A new seller's payment was held, disputed and refunded in full. The refund went back to Base, and the seller got negative feedback | [Payment 4](https://talaria-pi.vercel.app/payment/4) |
+| A seller with real history (score 100) was paid instantly, and got positive feedback | [Payment 5](https://talaria-pi.vercel.app/payment/5) |
+| A merchant refunded part of a released payment | [Payment 6](https://talaria-pi.vercel.app/payment/6) |
+| A wallet holding 0 tPOT paid an invoice from BNB testnet, through the website, with no gas | [Invoice 2](https://talaria-pi.vercel.app/pay/2) |
+| Our hosted AI agent bought from a merchant after a visitor typed one sentence, with no wallet | [Agent](https://talaria-pi.vercel.app/agent) |
+
+All hashes are below and in [evidence/TRANSACTIONS.md](evidence/TRANSACTIONS.md). They come from our own test runs, not customers.
 
 ## Status: what is live and what is not
 
@@ -92,9 +119,13 @@ Off-chain: a relayer (bridge, intents, keeper, settler), TypeScript SDK, hosted 
 
 ## Why Portaldot
 
-- **Settlement hub.** Standard Solidity and viem run on V3 through pallet-revive, so Portaldot can be where value and reputation from other chains settle. Our address tools handle H160 and SS58 mapping, checked against accounts mapped on-chain ([probe](evidence/probe-chain.json)).
-- **Storage deposits shaped the design.** A new slot locks about 3.84 tPOT, so attestations are verified inline, receipts are events, and vouchers replace per-call writes.
-- **Measured costs for other builders.** Deployment costs about 0.0781 tPOT per byte plus 17 per contract, fitted to our two real deployments. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Talaria needs a neutral place where value and reputation from different chains meet and settle. Portaldot V3 is that place.
+
+- **EVM on Portaldot.** V3 runs standard Solidity through pallet-revive, so our contracts, Hardhat and viem work unchanged. Every protected payment, dispute, refund, mandate and bridge credit settles on Portaldot. Our address tools handle H160 and SS58 mapping, checked against accounts mapped on-chain ([probe](evidence/probe-chain.json)).
+- **Multi-chain by design.** Funds come in from Base Sepolia and BNB testnet, and reputation is read from ERC-8004 on Base. Portaldot is where they come together, and where the outcome is decided.
+- **Built for its costs.** A new storage slot locks about 3.84 tPOT, so Talaria verifies reputation inline instead of storing it, keeps payment history in events, and batches pay-per-call into single settlements.
+- **Measured costs for other builders.** Deployment costs about 0.0781 tPOT per byte plus 17 per contract, fitted to our real deployments. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- **A shared layer for the ecosystem.** Any Portaldot app, from marketplaces to lending, can use the same payments and the same reputation instead of rebuilding them.
 
 ## Deployed contracts
 
@@ -151,7 +182,7 @@ All transactions and costs: [evidence/TRANSACTIONS.md](evidence/TRANSACTIONS.md)
 
 ## Traction
 
-From `pnpm stats` and the relayer's records, on 2026-11-04. These are our own test transactions, not customers. We have no users or revenue yet.
+From `pnpm stats` and the relayer's records, on 2026-11-05. These are our own test transactions, not customers. We have no users or revenue yet.
 
 | Metric | Count |
 |---|---|
@@ -249,7 +280,7 @@ pnpm stats
 
 ## How a judge can try it
 
-1. **No wallet needed:** open https://talaria-pi.vercel.app. The overview reads the chain live, `/pay/1` shows invoice 1 and who paid it, and `/payment/5` shows a full payment timeline.
+1. **No wallet needed:** open https://talaria-pi.vercel.app. The landing page reads the chain live and tells the full story with real hashes. `/payment/4` shows a dispute and refund, `/payment/5` an instant settlement, and `/payment/6` a merchant refund.
    On `/agent`, try the hosted agent: "what is the trust of trusted coffee" reads Base, and "buy 1 tUSD from Trusted Coffee" makes a real testnet purchase. Purchases spend the relayer's limited tPOT, so they are capped and may pause.
 2. **Check the evidence:** look up any hash above through `https://test-evm-rpc-v3.portaldot.dev`, or read the saved receipts in `evidence/`.
 3. **With a wallet:** add a network with chain ID `420420777` and that RPC URL. The app can switch networks for you. Signed actions need no tPOT, but the relayer must be running and funded, and it has very little tPOT right now, as the overview page shows. `Claim 1,000 tUSD` is a direct transaction that needs your own tPOT.
