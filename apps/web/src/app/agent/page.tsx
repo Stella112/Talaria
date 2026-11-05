@@ -1,9 +1,9 @@
 "use client";
 
-import { RailBit, TalariaCoreAbi, type Intent } from "@talaria-pay/sdk";
+import { mandateHash, RailBit, TalariaCoreAbi, type Intent } from "@talaria-pay/sdk";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { encodeFunctionData, type Address } from "viem";
 import { useConnection } from "wagmi";
 import { TrustBadge, useTrust } from "@/components/trust";
@@ -41,6 +41,10 @@ async function callAgent(path: string, body: unknown) {
   return json;
 }
 
+const DEMO_MERCHANTS = [
+  { name: "Trusted Coffee", address: "0x98C89a07e45A33f793DD085D4E8EB630711c52f2" },
+  { name: "New Shop", address: "0x6c05cE2B9Efec7F9Ee6fdC0888f79E7F5c5BC15A" },
+] as const;
 const HOSTED_IDS = "10589 (Base), 2723 (BNB)";
 const TIER_CAPS = { trusted: 100, established: 25, new: 5 } as const;
 const EXAMPLES = ["what is the trust of trusted coffee", "buy 1 tUSD from Trusted Coffee", "buy 1 tUSD from New Shop", "show my receipts"];
@@ -156,7 +160,7 @@ export default function Agent() {
   const [maxPerTx, setMaxPerTx] = useState("5");
   const [maxPerDay, setMaxPerDay] = useState("20");
   const [days, setDays] = useState("7");
-  const [rails, setRails] = useState<number>(RailBit.checkout | RailBit.channels);
+  const [rails, setRails] = useState<number>(RailBit.checkout | RailBit.protect);
 
   const pending = useQuery({
     queryKey: ["pending", address],
@@ -175,13 +179,21 @@ export default function Agent() {
   const activity = useQuery({ queryKey: ["activity", address], enabled: Boolean(address), queryFn: () => reader.getReceipts({ payer: address!, fromBlock: CORE_DEPLOY_BLOCK }) });
 
   const [mandateAgent, setMandateAgent] = useState("");
-  const [mandatePayee, setMandatePayee] = useState("");
+  const [mandatePayee, setMandatePayee] = useState<string>(DEMO_MERCHANTS[0].address);
   const [mandateMax, setMandateMax] = useState("5");
   const [signedMandate, setSignedMandate] = useState<string>();
   const [revokeHash, setRevokeHash] = useState("");
   const isAddress = (value: string) => /^0x[0-9a-fA-F]{40}$/.test(value);
   const agentTrust = useTrust(isAddress(mandateAgent) ? (mandateAgent as Address) : undefined);
   const hosted = useHostedAgent();
+  const hostedWallet = hosted.data?.wallet;
+  // Ready to use: both forms start with our hosted agent, and anyone can replace it with their own key.
+  useEffect(() => {
+    if (!hostedWallet) return;
+    setKey((value) => value || hostedWallet);
+    setMandateAgent((value) => value || hostedWallet);
+  }, [hostedWallet]);
+  const isHosted = (value: string) => Boolean(hostedWallet) && value.toLowerCase() === hostedWallet!.toLowerCase();
 
   const railOptions = Object.entries(RailBit).filter(([name]) => name !== "account");
 
@@ -193,13 +205,25 @@ export default function Agent() {
         {reader.addresses.protect ? (
           <>
             <Field label="Agent key address (0x…)" value={mandateAgent} onChange={(e) => setMandateAgent(e.target.value)} />
-            {hosted.data && <button onClick={() => setMandateAgent(hosted.data.wallet)} className="min-h-10 rounded-full border border-[var(--line)] bg-white px-3 text-sm">Use Talaria Autopilot</button>}
+            {isHosted(mandateAgent) && <p className="text-sm text-[var(--muted)]">This is Talaria Autopilot, our hosted agent. Paste another address to use your own.</p>}
             {agentTrust.data && (
               <p className="text-sm text-[var(--muted)]">
                 This agent's reputation is {agentTrust.data.score} from {agentTrust.data.feedbackCount} feedbacks, so it can pay up to {TIER_CAPS[agentTrust.data.tier]} tUSD at a time. Its cap rises as it builds history.
               </p>
             )}
             <Field label="Allowed merchant (0x…)" value={mandatePayee} onChange={(e) => setMandatePayee(e.target.value)} />
+            <div className="flex flex-wrap gap-2">
+              {DEMO_MERCHANTS.map((merchant) => (
+                <button
+                  key={merchant.name}
+                  onClick={() => setMandatePayee(merchant.address)}
+                  aria-pressed={mandatePayee === merchant.address}
+                  className={`min-h-10 rounded-full border px-3 text-sm ${mandatePayee === merchant.address ? "border-[var(--ink)] bg-[var(--ink)] text-white" : "border-[var(--line)] bg-white"}`}
+                >
+                  {merchant.name}
+                </button>
+              ))}
+            </div>
             {isAddress(mandatePayee) && <TrustBadge subject={mandatePayee as Address} holdMinutes={{ established: 10, new: 30 }} />}
             <Field label="Maximum (tUSD)" inputMode="decimal" value={mandateMax} onChange={(e) => setMandateMax(e.target.value)} />
             <ActionButton
@@ -207,6 +231,7 @@ export default function Agent() {
               disabled={!isAddress(mandateAgent) || !isAddress(mandatePayee)}
               run={async () => {
                 const signed = await (await signer()).createMandate({ agent: mandateAgent as Address, payees: [mandatePayee as Address], maxAmount: mandateMax, maxUses: 1 });
+                setRevokeHash(mandateHash(signed.mandate));
                 setSignedMandate(JSON.stringify(signed, (_, value) => (typeof value === "bigint" ? value.toString() : value), 2));
               }}
             />
@@ -220,7 +245,7 @@ export default function Agent() {
       </Card>
       <Card title="Session key" note="Gives an agent's key limited spending from your account. The limits are enforced on-chain. Costs the relayer about 7.7 tPOT.">
         <Field label="Agent key address (0x…)" value={key} onChange={(e) => setKey(e.target.value)} />
-        {hosted.data && <button onClick={() => setKey(hosted.data.wallet)} className="min-h-10 rounded-full border border-[var(--line)] bg-white px-3 text-sm">Use Talaria Autopilot</button>}
+        {isHosted(key) && <p className="text-sm text-[var(--muted)]">This is Talaria Autopilot, our hosted agent. Paste another address to use your own.</p>}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Max per payment" inputMode="decimal" value={maxPerTx} onChange={(e) => setMaxPerTx(e.target.value)} />
           <Field label="Max per day" inputMode="decimal" value={maxPerDay} onChange={(e) => setMaxPerDay(e.target.value)} />

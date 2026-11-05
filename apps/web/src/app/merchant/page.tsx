@@ -16,7 +16,7 @@ const ZERO = "0x0000000000000000000000000000000000000000";
 export default function Merchant() {
   const { address } = useConnection();
   const [amount, setAmount] = useState("5");
-  const [memo, setMemo] = useState("");
+  const [memo, setMemo] = useState("Test order");
   const [refundAmount, setRefund] = useState("1");
   const [planAmount, setPlanAmount] = useState("5");
   const [created, setCreated] = useState<bigint>();
