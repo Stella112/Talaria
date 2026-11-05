@@ -123,8 +123,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-6">
           <Link href="/" className="flex shrink-0 items-center gap-2 text-xl font-semibold tracking-tight">
-            <span aria-hidden className="h-6 w-3.5 rounded-full bg-[var(--orange)]" />
-            Talaria
+            <img src="/logo.png" alt="Talaria" className="h-7 w-auto" />
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             {NAV.map(([href, label]) => (
