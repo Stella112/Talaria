@@ -19,6 +19,7 @@ export default function Pay() {
   const id = valid ? BigInt(params.invoiceId) : 0n;
   const { address } = useConnection();
   const [link, setLink] = useState("");
+  const [copied, setCopied] = useState(false);
   const [steps, setSteps] = useState<{ label: string; hash?: Hex; chain: "base" | "bnb" | "portaldot" }[]>([]);
   const [baseError, setBaseError] = useState<string>();
   const [running, setRunning] = useState(false);
@@ -90,6 +91,21 @@ export default function Pay() {
         {link && (
           <div className="flex justify-center rounded-2xl bg-white p-4">
             <QRCodeSVG value={link} size={160} />
+          </div>
+        )}
+        {link && (
+          <div className="rounded-2xl bg-white p-3 text-sm">
+            <p className="font-medium">Payment link</p>
+            <code className="mt-1 block text-xs break-all">{link}</code>
+            <button
+              className="mt-1 min-h-8 text-xs font-medium underline underline-offset-2"
+              onClick={async () => {
+                await navigator.clipboard.writeText(link);
+                setCopied(true);
+              }}
+            >
+              {copied ? "Copied" : "Copy link"}
+            </button>
           </div>
         )}
       </Card>

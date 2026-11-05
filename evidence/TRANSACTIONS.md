@@ -99,3 +99,4 @@
 | feedback (Base Sepolia) | 6:10590:released | `0x2949c7ecfe378c21e5e6ad0f514d4a5bdc2a47b377d5b069df0d1821173e150e` | 54530764 | success | test ETH |
 | feedback (Base Sepolia) | 6:10589:released | `0x84838952f97df6c9b7b952eb054403d93f043e79f8ab91da089aa7b3b831aab3` | 54530771 | success | test ETH |
 | setup (BNB testnet) | send 0.01 tBNB to tester 0xE66581C8f5B91d257b5EAa90168B547Ba28f8e19 | `0xa20eb8469506a5b0a9420463739f3e7cabd33d75d254617c5b6d2c8c518758d9` | 140998361 | success | test BNB |
+| checkout | invoice 2 created from the website, by a wallet with 0 tPOT | `0x417b8c3ce5b42642a2370204cfdb04b2d0962d26c9df212827e1ebf38fd21d87` | 337757 | success | paid by the VPS relayer, 7.73 tPOT |
