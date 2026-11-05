@@ -7,6 +7,7 @@
 <p align="center">
   <a href="https://talaria-pi.vercel.app"><b>Live app</b></a> ·
   <a href="https://talaria-pi.vercel.app/agent">Try the agent, no wallet</a> ·
+  <a href="https://youtu.be/31c2cLwA9Zs">Demo video</a> ·
   <a href="https://talaria-pi.vercel.app/docs">Docs</a> ·
   <a href="evidence/TRANSACTIONS.md">Every transaction</a>
 </p>
