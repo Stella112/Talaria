@@ -3,8 +3,9 @@
 import { TalariaProtectAbi } from "@talaria-pay/sdk";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
+import { useState } from "react";
 import { useConnection } from "wagmi";
-import { ActionButton, Card, Empty, Notice, Pill, Row, TxHash } from "@/components/ui";
+import { ActionButton, Card, Empty, Field, Notice, Pill, Row, TxHash } from "@/components/ui";
 import { client, CORE_DEPLOY_BLOCK, explain, reader, short, signer, tusd } from "@/lib/talaria";
 
 const LABELS: Record<string, string> = {
@@ -19,6 +20,7 @@ const LABELS: Record<string, string> = {
 export default function PaymentPage() {
   const params = useParams<{ id: string }>();
   const { address } = useConnection();
+  const [refundAmount, setRefundAmount] = useState("1");
   const valid = /^\d+$/.test(params.id);
   const id = valid ? BigInt(params.id) : 0n;
   const protect = reader.addresses.protect;
@@ -68,6 +70,26 @@ export default function PaymentPage() {
               return hash;
             }}
           />
+        )}
+      </Card>
+      <Card title="Merchant refund" note="The merchant can refund all or part of a payment, while it is held or after it is released. A held refund comes back from escrow, and a released one comes from the merchant's Talaria balance. Signed by the merchant, and the relayer pays the gas.">
+        {["disputed", "refunded", "resolved"].includes(data.status) ? (
+          <Empty>This payment can't be refunded by the merchant: it is {data.status}.</Empty>
+        ) : address?.toLowerCase() === data.merchant.toLowerCase() ? (
+          <>
+            <Row label="Refundable">{tusd(data.amount - data.refunded)} tUSD</Row>
+            <Field label="Refund amount (tUSD)" inputMode="decimal" value={refundAmount} onChange={(e) => setRefundAmount(e.target.value)} />
+            <ActionButton
+              label={`Refund ${refundAmount} tUSD`}
+              run={async () => {
+                const hash = await (await signer()).refundProtected(id, refundAmount);
+                await Promise.all([payment.refetch(), events.refetch()]);
+                return hash;
+              }}
+            />
+          </>
+        ) : (
+          <Empty>Connect the merchant's wallet ({short(data.merchant)}) to refund this payment.</Empty>
         )}
       </Card>
       <Card title="Timeline" note="All steps here are on Portaldot. Reputation written back to Base is listed in the evidence log.">
