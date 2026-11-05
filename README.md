@@ -144,6 +144,7 @@ Off-chain: a relayer (bridge, intents, keeper, settler), TypeScript SDK, hosted 
 | Negative feedback for New Shop | Base Sepolia | `0x6b36aac7530da0405612d376e463f54ad9ddac4f358b4ea7a4afb1702a85a61e` |
 | Agent buys from Trusted Coffee: instant | Portaldot | `0xff4f51b92c5d5e3edc2e86f19e80f2c5484a76b664d4038fb36fcda633ceb10a` |
 | Positive feedback for Trusted Coffee | Base Sepolia | `0xa937c932653e6eeac7189248f6dbc22fbde138422fd8aaaf8e9304079c985e4f` |
+| Trusted Coffee refunds 0.5 tUSD on payment 6 (merchant refund) | Portaldot | `0x803bc8da03c8ad4d0ae2fa156c418f644ccb9c2c5ea2fcf6c4120b44f72f040f` |
 | Agent buys from Trusted Coffee, started from the website with no wallet | Portaldot | `0x294b8cd52657f7c03e49314fa444937e1c9473cecaa41b1068982d7a43f4e71a` |
 
 All transactions and costs: [evidence/TRANSACTIONS.md](evidence/TRANSACTIONS.md).
@@ -160,7 +161,7 @@ From `pnpm stats` and the relayer's records, on 2026-11-04. These are our own te
 | Disputes opened, resolved | 1, 1 |
 | Feedback written to Base | 11 |
 | Subjects registered in ERC-8004 | 3 |
-| Recorded transactions | 103 |
+| Recorded transactions | 105 |
 
 ## Business
 
