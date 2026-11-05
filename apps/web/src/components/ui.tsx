@@ -174,7 +174,7 @@ export function Page({ eyebrow, title, intro, narrow, children }: { eyebrow: str
       <Pill>{eyebrow}</Pill>
       <h1 className="mt-4 max-w-3xl text-4xl font-semibold md:text-6xl">{title}</h1>
       <p className="mt-4 mb-8 max-w-2xl text-lg text-[var(--muted)] md:mb-12">{intro}</p>
-      <div className={narrow ? "" : "gap-5 md:columns-2"}>{children}</div>
+      <div className={narrow ? "" : "md:grid md:grid-cols-2 md:items-start md:gap-x-5"}>{children}</div>
     </div>
   );
 }
@@ -194,7 +194,7 @@ export function Empty({ children }: { children: ReactNode }) {
 }
 
 export function Notice({ children }: { children: ReactNode }) {
-  return <p className="mb-5 rounded-2xl bg-[var(--warn-bg)] px-4 py-3 text-sm leading-relaxed text-[var(--warn-ink)]">{children}</p>;
+  return <p className="mb-5 rounded-2xl bg-[var(--warn-bg)] px-4 py-3 text-sm leading-relaxed text-[var(--warn-ink)] md:col-span-2">{children}</p>;
 }
 
 export function Row({ label, children }: { label: string; children: ReactNode }) {

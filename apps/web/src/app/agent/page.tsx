@@ -2,12 +2,13 @@
 
 import { RailBit, TalariaCoreAbi, type Intent } from "@talaria-pay/sdk";
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useState } from "react";
 import { encodeFunctionData, type Address } from "viem";
 import { useConnection } from "wagmi";
 import { TrustBadge, useTrust } from "@/components/trust";
 import { getWalletClient } from "wagmi/actions";
-import { ActionButton, Card, Empty, Field, NeedsWallet, Notice, Row, TxHash } from "@/components/ui";
+import { ActionButton, Card, Empty, Field, NeedsWallet, Notice, Pill, Row, TxHash } from "@/components/ui";
 import { AGENT_PATH, client, CORE_DEPLOY_BLOCK, reader, short, signer, tusd, wagmiConfig } from "@/lib/talaria";
 import { portaldotTestnet } from "@talaria-pay/sdk";
 
@@ -40,39 +41,112 @@ async function callAgent(path: string, body: unknown) {
   return json;
 }
 
-/** The hosted agent. It needs no wallet, so anyone can try it. */
+const HOSTED_IDS = "10589 on Base Sepolia, 2723 on BNB testnet";
+const TIER_CAPS = { trusted: 100, established: 25, new: 5 } as const;
+const EXAMPLES = ["what is the trust of trusted coffee", "buy 1 tUSD from Trusted Coffee", "buy 1 tUSD from New Shop", "show my receipts"];
+
+function useHostedAgent() {
+  return useQuery({
+    queryKey: ["hosted-agent"],
+    retry: 1,
+    queryFn: async () => {
+      const response = await fetch(`${AGENT_PATH}/.well-known/agent-card.json`);
+      if (!response.ok) throw new Error("The agent service is not reachable");
+      return (await response.json()) as { name: string; wallet: Address };
+    },
+  });
+}
+
+/** The hosted agent, deployed and ready. It needs no wallet, so anyone can use it. */
 function Autopilot() {
-  const [command, setCommand] = useState("buy 1 tUSD from Trusted Coffee");
+  const card = useHostedAgent();
+  const trust = useTrust(card.data?.wallet);
+  const [command, setCommand] = useState(EXAMPLES[0]);
   const [parsed, setParsed] = useState<Parsed>();
-  const [result, setResult] = useState<string>();
+  const [result, setResult] = useState<any>();
+  const [rating, setRating] = useState<{ baseTx?: string; error?: string }>();
 
   return (
-    <Card title="Autopilot" note="No wallet needed. This hosted agent signs with its own key, under on-chain limits, and buys with test tokens from a demo buyer account. Nothing runs until you confirm the preview.">
-      <Field label="Command" value={command} onChange={(e) => setCommand(e.target.value)} />
-      <ActionButton
-        secondary
-        label="Preview"
-        run={async () => {
-          setResult(undefined);
-          setParsed(undefined);
-          setParsed(await callAgent("/parse", { command }));
-        }}
-      />
-      {parsed && (
-        <>
-          <Notice>{parsed.preview}</Notice>
+    <section className="mb-5 rounded-3xl bg-[var(--surface)] p-5 md:col-span-2 md:p-7">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-2xl font-semibold">{card.data?.name ?? "Talaria Autopilot"}</h2>
+        {card.isLoading ? <Pill>Checking…</Pill> : card.data ? <Pill tone="good">Online, ready to use</Pill> : <Pill tone="orange">Offline right now</Pill>}
+      </div>
+      <p className="mt-1.5 max-w-3xl text-sm leading-relaxed text-[var(--muted)]">
+        Our hosted agent, with its own on-chain identity. No wallet or key needed: type a task, check the preview, and confirm. It buys with test tokens from a demo buyer account, and it can only pay the demo merchants.
+      </p>
+      <div className="mt-5 grid gap-5 md:grid-cols-[1fr_1.4fr]">
+        <div className="space-y-3 rounded-2xl bg-white p-4 md:p-5">
+          <Row label="Wallet">{card.data ? short(card.data.wallet) : "…"}</Row>
+          <Row label="ERC-8004 agent">{HOSTED_IDS}</Row>
+          <Row label="Reputation">{trust.data ? `${trust.data.score} from ${trust.data.feedbackCount} feedbacks` : "…"}</Row>
+          <Row label="Trust tier">{trust.data?.tier ?? "…"}</Row>
+          <Row label="Cap per payment">{trust.data ? `${TIER_CAPS[trust.data.tier]} tUSD` : "…"}</Row>
+          <Row label="Can buy from">Trusted Coffee, New Shop</Row>
+          <p className="text-xs leading-relaxed text-[var(--muted)]">Its cap rises and falls with its reputation, read live from Base. This history comes from our own demo runs. Buying spends the relayer's limited tPOT, so purchases are capped and may pause.</p>
+        </div>
+        <div className="space-y-3">
+          <Field label="What should it do?" value={command} onChange={(e) => setCommand(e.target.value)} />
+          <div className="flex flex-wrap gap-2">
+            {EXAMPLES.map((example) => (
+              <button key={example} onClick={() => setCommand(example)} className="min-h-10 rounded-full border border-[var(--line)] bg-white px-3 text-left text-sm">
+                {example}
+              </button>
+            ))}
+          </div>
           <ActionButton
-            label={parsed.needsConfirmation ? "Confirm and run" : "Run"}
+            label="Preview"
             run={async () => {
-              const response = await callAgent("/execute", { action: parsed.action, confirmed: true });
-              setResult(JSON.stringify(response.result, null, 2));
-              return response.result?.txHash;
+              setResult(undefined);
+              setParsed(undefined);
+              setRating(undefined);
+              setParsed(await callAgent("/parse", { command }));
             }}
           />
-        </>
-      )}
-      {result && <pre className="overflow-x-auto rounded-2xl bg-white p-3 text-xs">{result}</pre>}
-    </Card>
+          {parsed && (
+            <>
+              <Notice>{parsed.preview}</Notice>
+              <ActionButton
+                label={parsed.needsConfirmation ? "Confirm and run" : "Run"}
+                run={async () => {
+                  const response = await callAgent("/execute", { action: parsed.action, confirmed: true });
+                  setResult(response.result);
+                  return response.result?.txHash;
+                }}
+              />
+            </>
+          )}
+          {result?.paymentId && (
+            <div className="space-y-3 rounded-2xl bg-white p-4">
+              <Link className="font-semibold underline underline-offset-4" href={`/payment/${result.paymentId}`}>See payment #{result.paymentId} and its timeline</Link>
+              <p className="text-sm font-medium">Rate this job</p>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((stars) => (
+                  <button
+                    key={stars}
+                    disabled={Boolean(rating?.baseTx)}
+                    onClick={async () => {
+                      try {
+                        setRating({ baseTx: (await callAgent("/rate", { paymentId: String(result.paymentId), stars })).baseTx });
+                      } catch (error) {
+                        setRating({ error: (error as Error).message });
+                      }
+                    }}
+                    className="min-h-11 min-w-11 rounded-full border border-[var(--line)] font-semibold disabled:opacity-40"
+                  >
+                    {stars}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-[var(--muted)]">Written to Base as labelled demo-client feedback. Only a settled payment can be rated, and a new merchant's payment settles after its hold.</p>
+              {rating?.error && <p className="text-sm text-[var(--bad)]">{rating.error}</p>}
+              {rating?.baseTx && <TxHash hash={rating.baseTx} chain="base" />}
+            </div>
+          )}
+          {result !== undefined && !result?.paymentId && <pre className="overflow-x-auto rounded-2xl bg-white p-3 text-xs">{JSON.stringify(result, null, 2)}</pre>}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -107,7 +181,7 @@ export default function Agent() {
   const [revokeHash, setRevokeHash] = useState("");
   const isAddress = (value: string) => /^0x[0-9a-fA-F]{40}$/.test(value);
   const agentTrust = useTrust(isAddress(mandateAgent) ? (mandateAgent as Address) : undefined);
-  const CAPS = { trusted: 100, established: 25, new: 5 } as const;
+  const hosted = useHostedAgent();
 
   const railOptions = Object.entries(RailBit).filter(([name]) => name !== "account");
 
@@ -119,9 +193,10 @@ export default function Agent() {
         {reader.addresses.protect ? (
           <>
             <Field label="Agent key address (0x…)" value={mandateAgent} onChange={(e) => setMandateAgent(e.target.value)} />
+            {hosted.data && <button onClick={() => setMandateAgent(hosted.data.wallet)} className="min-h-10 rounded-full border border-[var(--line)] bg-white px-3 text-sm">Use Talaria Autopilot</button>}
             {agentTrust.data && (
               <p className="text-sm text-[var(--muted)]">
-                This agent's reputation is {agentTrust.data.score} from {agentTrust.data.feedbackCount} feedbacks, so it can pay up to {CAPS[agentTrust.data.tier]} tUSD at a time. Its cap rises as it builds history.
+                This agent's reputation is {agentTrust.data.score} from {agentTrust.data.feedbackCount} feedbacks, so it can pay up to {TIER_CAPS[agentTrust.data.tier]} tUSD at a time. Its cap rises as it builds history.
               </p>
             )}
             <Field label="Allowed merchant (0x…)" value={mandatePayee} onChange={(e) => setMandatePayee(e.target.value)} />
@@ -145,6 +220,7 @@ export default function Agent() {
       </Card>
       <Card title="Session key" note="Gives an agent's key limited spending from your account. The limits are enforced on-chain. Costs the relayer about 7.7 tPOT.">
         <Field label="Agent key address (0x…)" value={key} onChange={(e) => setKey(e.target.value)} />
+        {hosted.data && <button onClick={() => setKey(hosted.data.wallet)} className="min-h-10 rounded-full border border-[var(--line)] bg-white px-3 text-sm">Use Talaria Autopilot</button>}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Max per payment" inputMode="decimal" value={maxPerTx} onChange={(e) => setMaxPerTx(e.target.value)} />
           <Field label="Max per day" inputMode="decimal" value={maxPerDay} onChange={(e) => setMaxPerDay(e.target.value)} />
