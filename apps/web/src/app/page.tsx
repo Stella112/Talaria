@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { formatEther } from "viem";
 import { Notice, Pill } from "@/components/ui";
-import { baseSepoliaDeployments } from "@talaria-pay/sdk";
+import { baseSepoliaDeployments, bnbTestnetDeployments } from "@talaria-pay/sdk";
 import { client, LOCKBOX, reader, short, tusd } from "@/lib/talaria";
 
 const LOW_TPOT = 8n * 10n ** 18n; // one new invoice costs about 7.7 tPOT
@@ -66,9 +66,9 @@ export default function Overview() {
             <span className="pulse-dot h-2 w-2 rounded-full bg-[var(--good)]" />
             Live on Portaldot V3 testnet
           </Pill>
-          <h1 className="mt-5 text-5xl leading-[1.05] font-semibold md:text-7xl">Payments with wings.</h1>
+          <h1 className="mt-5 text-5xl leading-[1.05] font-semibold md:text-7xl">Stripe for Portaldot, with a refund button.</h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-[var(--muted)]">
-            Trust-priced settlement for people and AI agents. Reputation from any chain decides how fast money moves on Portaldot, and what happens on Portaldot writes reputation back.
+            Crypto payments for people and AI agents. Talaria holds payments to new sellers so buyers can get their money back, pays proven sellers instantly, and gives agents spending limits that grow with their reputation.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link href="/merchant" className="flex min-h-12 items-center rounded-full bg-[var(--ink)] px-6 font-semibold text-white transition-opacity hover:opacity-85">
@@ -181,6 +181,29 @@ export default function Overview() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-4 pt-16 md:px-6 md:pt-20">
+        <Pill>Source chains</Pill>
+        <h2 className="mt-4 max-w-2xl text-4xl font-semibold md:text-5xl">Fund from Base or BNB</h2>
+        <p className="mt-3 max-w-2xl text-[var(--muted)]">Lock test mUSDC on either chain, and one trusted relayer credits you on Portaldot. Bridge-out has run back to Base. To BNB it is enabled but not yet run.</p>
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          {[
+            { name: "Base Sepolia", lock: "0x1e8fddc7ce961eee32eb158aeb1eeb8dd669b1f993366a9248ac013eb0d00364", credit: "0xb0d9b610ecdb280b356c9be2c9919b4770f470b662ed9d0907297fa8be8e9bf1" },
+            { name: "BNB testnet", lock: "0xc210a9bb20b85c55b4868510be1259d33e6f1d80e1050fd1b372135c8b97e048", credit: "0x34f3eb5c34f527da86940237f86bf1a9eeed94417f589639c9e30b063d63b0b8" },
+          ].map((chain) => (
+            <div key={chain.name} className="rounded-3xl bg-[var(--surface)] p-6 md:p-7">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-2xl font-semibold">{chain.name}</h3>
+                <Pill tone="good">Live, funds in</Pill>
+              </div>
+              <div className="mt-4 space-y-2 text-sm">
+                <div className="flex justify-between gap-3"><span className="text-[var(--muted)]">Lock</span><code className="font-medium">{short(chain.lock)}</code></div>
+                <div className="flex justify-between gap-3"><span className="text-[var(--muted)]">Credit on Portaldot</span><code className="font-medium">{short(chain.credit)}</code></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section id="proof" className="mx-auto max-w-6xl scroll-mt-24 px-4 pt-20 md:px-6 md:pt-28">
         <div className="rounded-[2rem] bg-[var(--sky)]/45 p-6 md:p-12">
           <Pill>Recorded on-chain</Pill>
@@ -209,6 +232,7 @@ export default function Overview() {
               ["tUSD", reader.addresses.token],
               ["Core", reader.addresses.core],
               ["Lockbox (Base Sepolia)", LOCKBOX],
+              ["Lockbox (BNB testnet)", bnbTestnetDeployments.TalariaLockboxV2],
             ].map(([label, address]) => (
               <div key={label} className="flex justify-between gap-3">
                 <span className="text-[var(--muted)]">{label}</span>

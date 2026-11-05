@@ -1,6 +1,10 @@
 # Talaria
 
-**Trust-priced settlement for Portaldot.** Reputation from any chain decides how fast money moves on Portaldot, and what happens on Portaldot writes reputation back.
+**Stripe for Portaldot, with a refund button.** Crypto payments for people and AI agents. Talaria holds payments to new sellers so buyers can get their money back, pays proven sellers instantly, and gives agents spending limits that grow with their reputation.
+
+"Stripe" is only a comparison. Talaria has no link to Stripe.
+
+The mechanism behind it is trust-priced settlement: reputation on Base decides how fast money moves on Portaldot, and what settles on Portaldot writes reputation back. A refund comes from the merchant, or from a dispute during the hold, decided by a trusted arbiter.
 
 > Testnet only. tUSD and mUSDC are test tokens with no value. Built for the Portaldot Hacker House 2026, track: Multi-Chain & Cross-Chain Infra.
 

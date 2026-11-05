@@ -6,13 +6,12 @@ import { useParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { createPublicClient, http, keccak256, toHex, type Hex } from "viem";
-import { baseSepolia } from "viem/chains";
 import { useConnection } from "wagmi";
 import { ActionButton, Card, Connect, Empty, Notice, Row, TxHash } from "@/components/ui";
-import { baseWallet, client, explain, LOCKBOX, MOCK_USDC, reader, short, signer, tusd } from "@/lib/talaria";
+import { client, explain, reader, short, signer, sourceWallet, SOURCES, tusd } from "@/lib/talaria";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
-const base = createPublicClient({ chain: baseSepolia, transport: http() });
+type Source = (typeof SOURCES)[number];
 
 export default function Pay() {
   const params = useParams<{ invoiceId: string }>();
@@ -20,7 +19,7 @@ export default function Pay() {
   const id = valid ? BigInt(params.invoiceId) : 0n;
   const { address } = useConnection();
   const [link, setLink] = useState("");
-  const [steps, setSteps] = useState<{ label: string; hash?: Hex; chain: "base" | "portaldot" }[]>([]);
+  const [steps, setSteps] = useState<{ label: string; hash?: Hex; chain: "base" | "bnb" | "portaldot" }[]>([]);
   const [baseError, setBaseError] = useState<string>();
   const [running, setRunning] = useState(false);
 
@@ -44,23 +43,24 @@ export default function Pay() {
   const enough = balance.data !== undefined && balance.data >= data.amount;
   const reserveOk = reserve.data !== undefined && reserve.data >= data.amount;
 
-  const add = (label: string, chain: "base" | "portaldot", hash?: Hex) => setSteps((list) => [...list, { label, chain, hash }]);
+  const add = (label: string, chain: "base" | "bnb" | "portaldot", hash?: Hex) => setSteps((list) => [...list, { label, chain, hash }]);
 
-  async function payFromBase() {
+  async function payFrom(source: Source) {
     setRunning(true);
     setBaseError(undefined);
     setSteps([]);
     try {
-      const wallet = await baseWallet();
+      const wallet = await sourceWallet(source.chain.id);
+      const remote = createPublicClient({ chain: source.chain, transport: http(source.rpc) });
       const send = async (label: string, to: Hex, abi: any, functionName: string, args: unknown[]) => {
-        const hash = await wallet.writeContract({ account: wallet.account!, chain: baseSepolia, address: to, abi, functionName, args });
-        await base.waitForTransactionReceipt({ hash, timeout: 180_000 });
-        add(label, "base", hash);
+        const hash = await wallet.writeContract({ account: wallet.account!, chain: source.chain, address: to, abi, functionName, args });
+        await remote.waitForTransactionReceipt({ hash, timeout: 180_000 });
+        add(label, source.id, hash);
       };
-      await send("Minted test mUSDC", MOCK_USDC, MockUSDCAbi, "mint", [data!.amount]);
-      await send("Approved the lockbox", MOCK_USDC, MockUSDCAbi, "approve", [LOCKBOX, data!.amount]);
+      await send("Minted test mUSDC", source.usdc, MockUSDCAbi, "mint", [data!.amount]);
+      await send("Approved the lockbox", source.usdc, MockUSDCAbi, "approve", [source.lockbox, data!.amount]);
       const start = balance.data ?? (await reader.getBalance(address!));
-      await send("Locked on Base Sepolia", LOCKBOX, TalariaLockboxAbi, "lock", [address, data!.amount, keccak256(toHex(`invoice-${id}`))]);
+      await send(`Locked on ${source.name}`, source.lockbox, TalariaLockboxAbi, "lock", [address, data!.amount, keccak256(toHex(`invoice-${id}`))]);
 
       add("Waiting for the relayer to credit Portaldot…", "portaldot");
       const deadline = Date.now() + 5 * 60_000;
@@ -113,15 +113,18 @@ export default function Pay() {
                   }}
                 />
               </Card>
-              <Card title="Pay from Base" note="Lock test mUSDC on Base Sepolia. One trusted relayer credits you on Portaldot, then you sign the payment. You need Base Sepolia test ETH.">
+              <Card title="Pay from Base or BNB" note="Lock test mUSDC on the chain you choose. One trusted relayer credits you on Portaldot, then you sign the payment. You need that chain's test gas: Base Sepolia test ETH, or test BNB.">
                 {!reserveOk && reserve.data !== undefined && <Notice>The bridge reserve holds {tusd(reserve.data)} tUSD, too little for this invoice. Locking now would not be credited, so this is off.</Notice>}
-                <button
-                  disabled={running || !reserveOk || !LOCKBOX}
-                  onClick={payFromBase}
-                  className="min-h-12 w-full rounded-full border border-[var(--ink)]/25 bg-white px-5 font-semibold disabled:opacity-40"
-                >
-                  {running ? "Working…" : "Pay from Base"}
-                </button>
+                {SOURCES.map((source) => (
+                  <button
+                    key={source.id}
+                    disabled={running || !reserveOk || !source.lockbox}
+                    onClick={() => payFrom(source)}
+                    className="min-h-12 w-full rounded-full border border-[var(--ink)]/25 bg-white px-5 font-semibold disabled:opacity-40"
+                  >
+                    {running ? "Working…" : `Pay from ${source.short}`}
+                  </button>
+                ))}
                 {baseError && <p className="text-sm break-words text-[var(--bad)]">{baseError}</p>}
                 {steps.map((step, index) => (
                   <div key={index} className="space-y-1 text-sm">

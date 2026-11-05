@@ -1,14 +1,16 @@
-import { baseSepoliaDeployments, createTalaria, portaldotClient, portaldotTestnet, type Talaria } from "@talaria-pay/sdk";
+import { baseSepoliaDeployments, bnbTestnetDeployments, createTalaria, portaldotClient, portaldotTestnet, type Talaria } from "@talaria-pay/sdk";
 import { formatUnits, type Address, type Hex, type LocalAccount, type WalletClient } from "viem";
-import { baseSepolia } from "viem/chains";
+import { baseSepolia, bscTestnet } from "viem/chains";
 import { createConfig, http } from "wagmi";
 import { getWalletClient, switchChain } from "wagmi/actions";
 import { injected } from "wagmi/connectors";
 
+const BNB_RPC = "https://bsc-testnet-rpc.publicnode.com";
+
 export const wagmiConfig = createConfig({
-  chains: [portaldotTestnet, baseSepolia],
+  chains: [portaldotTestnet, baseSepolia, bscTestnet],
   connectors: [injected()],
-  transports: { [portaldotTestnet.id]: http(), [baseSepolia.id]: http() },
+  transports: { [portaldotTestnet.id]: http(), [baseSepolia.id]: http(), [bscTestnet.id]: http(BNB_RPC) },
   ssr: true,
 });
 
@@ -23,6 +25,12 @@ export const reader = createTalaria({ publicClient: client });
 // New locks go to V2, the lockbox the relayer watches.
 export const LOCKBOX = baseSepoliaDeployments.TalariaLockboxV2 ?? baseSepoliaDeployments.TalariaLockbox;
 export const MOCK_USDC = baseSepoliaDeployments.MockUSDC;
+
+/** Chains a payer can fund from. One trusted relayer credits locks from each on Portaldot. */
+export const SOURCES = [
+  { id: "base", name: "Base Sepolia", short: "Base", chain: baseSepolia, rpc: undefined, lockbox: LOCKBOX, usdc: MOCK_USDC },
+  { id: "bnb", name: "BNB testnet", short: "BNB", chain: bscTestnet, rpc: BNB_RPC, lockbox: bnbTestnetDeployments.TalariaLockboxV2, usdc: bnbTestnetDeployments.MockUSDC },
+] as const;
 
 /** Lets the SDK sign with a browser wallet. The key stays in the wallet. */
 function walletAccount(wallet: WalletClient): LocalAccount {
@@ -46,9 +54,9 @@ export async function signer(): Promise<Talaria> {
 }
 
 /** Same as `signer`, for the few actions that are direct transactions and need tPOT. */
-export async function baseWallet(): Promise<WalletClient> {
-  await switchChain(wagmiConfig, { chainId: baseSepolia.id });
-  return getWalletClient(wagmiConfig, { chainId: baseSepolia.id });
+export async function sourceWallet(chainId: 84532 | 97): Promise<WalletClient> {
+  await switchChain(wagmiConfig, { chainId });
+  return getWalletClient(wagmiConfig, { chainId });
 }
 
 export const tusd = (value: bigint | number) => formatUnits(BigInt(value), 6);

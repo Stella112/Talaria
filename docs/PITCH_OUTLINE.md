@@ -3,7 +3,7 @@
 Update slides 4 and 7 from `pnpm stats` before submitting. Every number comes from `evidence/` or `deployments/`. Use no market-size figure without a source link.
 
 ## 1. Title
-Talaria: trust-priced settlement for Portaldot.
+Talaria: Stripe for Portaldot, with a refund button.
 
 ## 2. Problem
 - Money moves the same way for a stranger as for a trusted merchant: instantly with no recourse, or slowly for everyone.

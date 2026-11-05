@@ -7,7 +7,7 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 
-export const metadata: Metadata = { title: "Talaria", description: "Payments with wings on the Portaldot testnet" };
+export const metadata: Metadata = { title: "Talaria", description: "Stripe for Portaldot, with a refund button. Testnet demo." };
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

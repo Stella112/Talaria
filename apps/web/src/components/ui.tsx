@@ -156,9 +156,11 @@ export function Field(props: { label: string } & React.InputHTMLAttributes<HTMLI
 }
 
 /** A real transaction hash, copyable, with an explorer link where one exists. */
-export function TxHash({ hash, chain = "portaldot" }: { hash: string; chain?: "portaldot" | "base" }) {
+const EXPLORERS = { base: ["BaseScan", "https://sepolia.basescan.org/tx/"], bnb: ["BscScan", "https://testnet.bscscan.com/tx/"] } as const;
+
+export function TxHash({ hash, chain = "portaldot" }: { hash: string; chain?: "portaldot" | "base" | "bnb" }) {
   const [copied, setCopied] = useState(false);
-  const href = chain === "base" ? `https://sepolia.basescan.org/tx/${hash}` : "https://node-console.portaldot.dev/";
+  const href = chain === "portaldot" ? "https://node-console.portaldot.dev/" : `${EXPLORERS[chain][1]}${hash}`;
   return (
     <div className="rounded-2xl bg-white p-3 text-xs">
       <code className="block break-all">{hash}</code>
@@ -173,7 +175,7 @@ export function TxHash({ hash, chain = "portaldot" }: { hash: string; chain?: "p
           {copied ? "Copied" : "Copy"}
         </button>
         <a className="min-h-8 leading-8 underline underline-offset-2" href={href} target="_blank" rel="noreferrer">
-          {chain === "base" ? "BaseScan" : "Node console"}
+          {chain === "portaldot" ? "Node console" : EXPLORERS[chain][0]}
         </a>
       </div>
     </div>
