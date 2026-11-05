@@ -25,11 +25,17 @@ const BASE_RAILS: { name: string; text: string; contract: string }[] = [
   { name: "Remittance", text: "Send to an address or a claim link, cancellable until claimed.", contract: "TalariaRemit" },
 ];
 
-const RAILS: { name: string; text: string; key?: keyof Addresses }[] = [
-  { name: "Checkout", text: "Invoices, payment links and refunds, paid gaslessly." },
-  { name: "Buyer protection", text: "Trust decides the hold. Buyers can dispute while it lasts, and a trusted arbiter resolves it.", key: "protect" },
-  { name: "Bridge-out", text: "Move funds back to Base, with replay protection on both sides.", key: "bridgeOut" },
+const RAILS: { name: string; text: string; key?: keyof Addresses; href: string; cta: string }[] = [
+  { name: "Checkout", text: "Invoices, payment links and refunds, paid gaslessly.", href: "/merchant", cta: "Create a payment link" },
+  { name: "Buyer protection", text: "Trust decides the hold. Buyers can dispute while it lasts, and a trusted arbiter resolves it.", key: "protect", href: "/payment/5", cta: "See a real payment" },
+  { name: "Bridge-out", text: "Move funds back to Base, with replay protection on both sides.", key: "bridgeOut", href: "/wallet", cta: "Open wallet" },
 ];
+
+const DEVELOPERS = [
+  ["/docs", "Docs", "How Talaria works, the network, the contracts and how to run it."],
+  ["/docs/sdk", "SDK", "Add checkout, buyer protection and agent payments from TypeScript."],
+  ["/docs/mcp", "MCP server", "Give an AI agent payment tools, with limits enforced on-chain."],
+] as const;
 
 const PROOF = [
   ["Lock 10 mUSDC", "Base Sepolia", "0x1e8fddc7ce961eee32eb158aeb1eeb8dd669b1f993366a9248ac013eb0d00364"],
@@ -71,12 +77,12 @@ export default function Overview() {
             Crypto payments for people and AI agents. Talaria holds payments to new sellers so buyers can get their money back, pays proven sellers instantly, and gives agents spending limits that grow with their reputation.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <Link href="/merchant" className="flex min-h-12 items-center rounded-full bg-[var(--ink)] px-6 font-semibold text-white transition-opacity hover:opacity-85">
-              Create a payment link
+            <Link href="/wallet" className="flex min-h-12 items-center rounded-full bg-[var(--ink)] px-6 font-semibold text-white transition-opacity hover:opacity-85">
+              Open app
             </Link>
-            <a href="#proof" className="flex min-h-12 items-center rounded-full border border-[var(--ink)]/25 px-6 font-semibold">
-              See the proof
-            </a>
+            <Link href="/agent" className="flex min-h-12 items-center rounded-full border border-[var(--ink)]/25 px-6 font-semibold">
+              Try the agent, no wallet
+            </Link>
           </div>
         </div>
 
@@ -151,6 +157,7 @@ export default function Overview() {
                   <Pill tone={live ? "good" : "orange"}>{live ? "Live on Portaldot" : "Built, not deployed"}</Pill>
                 </div>
                 <p className="mt-2 text-[var(--muted)]">{rail.text}</p>
+                <Link href={rail.href} className="mt-4 font-semibold underline underline-offset-4">{rail.cta}</Link>
               </div>
             );
           })}
@@ -160,6 +167,7 @@ export default function Overview() {
               <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">On-chain limits</span>
             </div>
             <p className="mt-2 text-white/75">Session keys with limits per payment and per day, an approval queue for anything over them, and an MCP server.</p>
+            <Link href="/agent" className="mt-4 font-semibold underline underline-offset-4">Open the agent console</Link>
           </div>
         </div>
       </section>
@@ -244,6 +252,32 @@ export default function Overview() {
         <div className="rounded-3xl bg-[var(--surface)] p-6 md:p-7">
           <h3 className="text-2xl font-semibold">What to trust, and what not to</h3>
           <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">This is a testnet build with no audit. One trusted relayer runs the bridge, and one key holds the admin roles. A multi-signer bridge is on the roadmap. The relayer has {data ? Number(formatEther(data.relayerTpot)).toFixed(2) : "…"} tPOT now.</p>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pt-16 md:px-6 md:pt-20">
+        <Pill>For developers</Pill>
+        <h2 className="mt-4 max-w-2xl text-4xl font-semibold md:text-5xl">Build on Talaria</h2>
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {DEVELOPERS.map(([href, name, text]) => (
+            <Link key={href} href={href} className="flex flex-col rounded-3xl bg-[var(--surface)] p-6 transition-colors hover:bg-[var(--surface-2)] md:p-7">
+              <h3 className="text-2xl font-semibold">{name}</h3>
+              <p className="mt-2 text-[var(--muted)]">{text}</p>
+              <span className="mt-4 font-semibold underline underline-offset-4">Read more</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pt-5 md:px-6">
+        <div className="flex flex-col items-start justify-between gap-5 rounded-[2rem] bg-[var(--ink)] p-6 text-white md:flex-row md:items-center md:p-12">
+          <div>
+            <h2 className="text-3xl font-semibold md:text-4xl">Try it on testnet</h2>
+            <p className="mt-2 text-white/75">Test tokens only. They have no value.</p>
+          </div>
+          <Link href="/wallet" className="flex min-h-12 shrink-0 items-center rounded-full bg-white px-6 font-semibold text-[var(--ink)] transition-opacity hover:opacity-85">
+            Open app
+          </Link>
         </div>
       </section>
     </>

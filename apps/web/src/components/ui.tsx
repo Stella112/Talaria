@@ -6,13 +6,19 @@ import { useState, type ReactNode } from "react";
 import { useConnect, useConnection, useDisconnect } from "wagmi";
 import { explain, short } from "@/lib/talaria";
 
-const NAV = [
-  ["/", "Overview"],
+const APP_NAV = [
   ["/wallet", "Wallet"],
   ["/merchant", "Merchant"],
-  ["/streams", "Streams"],
   ["/agent", "Agent"],
+  ["/streams", "Streams"],
   ["/remit", "Remit"],
+  ["/docs", "Docs"],
+] as const;
+
+const SITE_NAV = [
+  ["/docs", "Docs"],
+  ["/docs/sdk", "SDK"],
+  ["/docs/mcp", "MCP"],
 ] as const;
 
 export function Connect() {
@@ -64,7 +70,10 @@ export function Pill({ children, tone = "line" }: { children: ReactNode; tone?: 
 
 export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
-  const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  // The landing page and docs are the site. Everything else is the app.
+  const onSite = path === "/" || path.startsWith("/docs");
+  const NAV = onSite ? SITE_NAV : APP_NAV;
+  const active = (href: string) => (onSite ? path === href : path.startsWith(href));
   return (
     <div className="min-h-screen">
       <p className="bg-[var(--ink)] px-4 py-2 text-center text-xs font-medium text-white">
@@ -83,7 +92,13 @@ export function Shell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <Connect />
+          {onSite ? (
+            <Link href="/wallet" className="flex min-h-11 shrink-0 items-center rounded-full bg-[var(--ink)] px-5 text-sm font-semibold text-white transition-opacity hover:opacity-85">
+              Open app
+            </Link>
+          ) : (
+            <Connect />
+          )}
         </div>
         <nav className="no-scrollbar flex gap-1 overflow-x-auto px-4 pb-3 md:hidden">
           {NAV.map(([href, label]) => (
@@ -97,9 +112,14 @@ export function Shell({ children }: { children: ReactNode }) {
       <footer className="mt-20 border-t border-[var(--line)]">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-[var(--muted)] md:flex-row md:justify-between md:px-6">
           <span>Talaria. Open source under MIT.</span>
-          <a className="underline underline-offset-4" href="https://github.com/Stella112/Talaria" target="_blank" rel="noreferrer">
-            Code and on-chain evidence on GitHub
-          </a>
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
+            <Link className="underline underline-offset-4" href="/docs">Docs</Link>
+            <Link className="underline underline-offset-4" href="/docs/sdk">SDK</Link>
+            <Link className="underline underline-offset-4" href="/docs/mcp">MCP</Link>
+            <a className="underline underline-offset-4" href="https://github.com/Stella112/Talaria" target="_blank" rel="noreferrer">
+              Code and on-chain evidence on GitHub
+            </a>
+          </div>
         </div>
       </footer>
     </div>
