@@ -13,7 +13,7 @@ const PAGES = [
 export function DocsNav() {
   const path = usePathname();
   return (
-    <nav aria-label="Docs" className="no-scrollbar flex gap-1 overflow-x-auto md:sticky md:top-24 md:flex-col">
+    <nav aria-label="Docs" className="hidden gap-1 md:sticky md:top-24 md:flex md:flex-col">
       {PAGES.map(([href, label]) => (
         <Link key={href} href={href} className={`flex min-h-10 shrink-0 items-center rounded-full px-3.5 text-sm font-medium ${path === href ? "bg-[var(--surface-2)]" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}>
           {label}
