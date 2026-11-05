@@ -41,7 +41,7 @@ async function callAgent(path: string, body: unknown) {
   return json;
 }
 
-const HOSTED_IDS = "10589 on Base Sepolia, 2723 on BNB testnet";
+const HOSTED_IDS = "10589 (Base), 2723 (BNB)";
 const TIER_CAPS = { trusted: 100, established: 25, new: 5 } as const;
 const EXAMPLES = ["what is the trust of trusted coffee", "buy 1 tUSD from Trusted Coffee", "buy 1 tUSD from New Shop", "show my receipts"];
 
