@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useConnect, useConnection, useDisconnect } from "wagmi";
 import { explain, short } from "@/lib/talaria";
 
@@ -26,7 +27,17 @@ export function Connect() {
   const { connect, connectors, error } = useConnect();
   const { disconnect } = useDisconnect();
   const [help, setHelp] = useState<string>();
+  const [picking, setPicking] = useState(false);
   const shown = help ?? (error ? explain(error) : undefined);
+  // Each installed wallet announces itself. The generic entry is whichever one took over window.ethereum.
+  const announced = connectors.filter((connector) => connector.id !== "injected");
+  const wallets = announced.length ? announced : connectors;
+  useEffect(() => {
+    if (!picking) return;
+    const close = (event: KeyboardEvent) => event.key === "Escape" && setPicking(false);
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [picking]);
   if (address) {
     return (
       <button onClick={() => disconnect()} className="min-h-11 shrink-0 rounded-full border border-[var(--line)] bg-white px-4 text-sm font-medium" title="Disconnect">
@@ -35,20 +46,50 @@ export function Connect() {
     );
   }
   const start = () => {
-    if (!(window as { ethereum?: unknown }).ethereum) {
+    if (!announced.length && !(window as { ethereum?: unknown }).ethereum) {
       setHelp("No wallet found in this browser. Install MetaMask, or open this page in your wallet app's browser. You can try the hosted agent on the Agent page with no wallet.");
       return;
     }
     setHelp(undefined);
-    if (connectors[0]) connect({ connector: connectors[0] });
+    setPicking(true);
   };
   return (
     <>
-    {shown && (
-      <p role="alert" className="fixed right-4 bottom-4 left-4 z-50 rounded-2xl bg-[var(--ink)] p-4 text-sm text-white md:left-auto md:max-w-md">
-        {shown}
-      </p>
-    )}
+    {shown &&
+      createPortal(
+        <p role="alert" className="fixed right-4 bottom-4 left-4 z-50 rounded-2xl bg-[var(--ink)] p-4 text-sm text-white md:left-auto md:max-w-md">
+          {shown}
+        </p>,
+        document.body,
+      )}
+    {picking &&
+      createPortal(
+        <div role="dialog" aria-modal="true" aria-label="Choose a wallet" onClick={() => setPicking(false)} className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--ink)]/50 p-4 md:items-center">
+          <div onClick={(event) => event.stopPropagation()} className="w-full max-w-sm rounded-3xl bg-white p-5 text-[var(--ink)]">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold">Choose a wallet</h2>
+              <button onClick={() => setPicking(false)} className="min-h-11 rounded-full px-3 text-sm font-medium text-[var(--muted)]">Close</button>
+            </div>
+            <div className="mt-3 space-y-2">
+              {wallets.map((wallet) => (
+                <button
+                  key={wallet.uid}
+                  onClick={() => {
+                    setPicking(false);
+                    connect({ connector: wallet });
+                  }}
+                  className="flex min-h-14 w-full items-center gap-3 rounded-2xl border border-[var(--line)] px-4 text-left font-semibold transition-colors hover:bg-[var(--surface)]"
+                >
+                  {wallet.icon ? <img src={wallet.icon} alt="" className="h-7 w-7 rounded-lg" /> : <span aria-hidden className="h-7 w-7 rounded-lg bg-[var(--surface-2)]" />}
+                  {wallet.id === "injected" ? "Browser wallet" : wallet.name}
+                </button>
+              ))}
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">EVM wallets only. Talaria signs with EVM keys, so the native Portaldot extension can't connect here.</p>
+          </div>
+        </div>,
+        document.body,
+      )}
     <button
       onClick={start}
       className="min-h-11 shrink-0 rounded-full bg-[var(--ink)] px-5 text-sm font-semibold text-white transition-opacity hover:opacity-85"
