@@ -103,3 +103,4 @@
 | bridge (BNB testnet) | lock 1 mUSDC for invoice 2, from the website | `0xb2a6a7c9213874141e1d09e8f4406b2c1d333a1e4ab6d58b97f2396a80c48a37` | 141001292 | success | test BNB, paid by the tester |
 | bridge | credit from BNB testnet, for invoice 2 | `0x7790b52017132f7c70db9c4e2f2eacda7664f954db8fca099827624a40be10f8` | 337871 | success | paid by the VPS relayer |
 | checkout | invoice 2 paid gaslessly from the website, by a wallet with 0 tPOT. Same wallet as the merchant, for testing | `0xc76af054c9140dd44abda6d7198a61a5d7895d57b8c9375cf97dbf2964b014f7` | 337884 | success | credit and payment cost the relayer 11.60 tPOT together |
+| setup (Base Sepolia) | send 0.005 ETH to tester 0xE66581C8f5B91d257b5EAa90168B547Ba28f8e19 | `0x0965dcb67bc9306b1d217564fdd8ecf6a5c1514c2892e56e57606f94d93130e6` | 54915130 | success | test ETH |
