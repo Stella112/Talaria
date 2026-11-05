@@ -25,7 +25,7 @@ The mechanism behind it is trust-priced settlement: reputation on Base decides h
 | Webhooks, idempotency | Built and tested with stubs. Not run against a real merchant |
 | Hosted agent, relayer | **Running on a VPS.** The relayer's tPOT is limited, so gasless actions pause at a set floor |
 | MCP server, x402 v2 headers | Built and tested locally |
-| BNB testnet as a second source chain | **Live for bridging in.** One real lock on BNB was credited on Portaldot, and the agent is registered there as id 2723. Bridge-out to BNB is enabled but untested, and the web checkout still offers Base only |
+| BNB testnet as a second source chain | **Live for funding in, including from the website.** A real wallet with 0 tPOT paid invoice 2 from BNB through the live checkout. The agent is registered there as id 2723. Bridge-out to BNB is enabled but has not been run |
 
 **The live flow:** a new merchant's payment is held, disputed and refunded, the refund returns to Base, and negative feedback lands on Base. Then a merchant with real history settles instantly. Trusted Coffee's score of 100 comes from real settled demo purchases by us, not from customers.
 
@@ -130,6 +130,9 @@ Off-chain: a relayer (bridge, intents, keeper, settler), TypeScript SDK, hosted 
 |---|---|---|
 | Lock 10 mUSDC | Base Sepolia | `0x1e8fddc7ce961eee32eb158aeb1eeb8dd669b1f993366a9248ac013eb0d00364` |
 | Relayer credits the payer | Portaldot | `0xb0d9b610ecdb280b356c9be2c9919b4770f470b662ed9d0907297fa8be8e9bf1` |
+| Website checkout: lock 1 mUSDC, by a wallet with 0 tPOT | BNB testnet | `0xb2a6a7c9213874141e1d09e8f4406b2c1d333a1e4ab6d58b97f2396a80c48a37` |
+| Credit | Portaldot | `0x7790b52017132f7c70db9c4e2f2eacda7664f954db8fca099827624a40be10f8` |
+| Invoice 2 paid gaslessly | Portaldot | `0xc76af054c9140dd44abda6d7198a61a5d7895d57b8c9375cf97dbf2964b014f7` |
 | Lock 2 mUSDC on BNB testnet | BNB testnet | `0xc210a9bb20b85c55b4868510be1259d33e6f1d80e1050fd1b372135c8b97e048` |
 | Relayer credits it, source chain 97 | Portaldot | `0x34f3eb5c34f527da86940237f86bf1a9eeed94417f589639c9e30b063d63b0b8` |
 | Payer with 0 tPOT pays invoice 1 | Portaldot | `0x7fe8f26f10f5ad7f2e9a8a06348eef6ba26a0515697a778dd2e15059e45000ab` |
@@ -152,12 +155,12 @@ From `pnpm stats` and the relayer's records, on 2026-11-04. These are our own te
 | Metric | Count |
 |---|---|
 | Contracts deployed | 4 on Portaldot, 8 on Base Sepolia, 2 on BNB testnet |
-| Invoices created, receipts issued on Portaldot | 1, 7 |
+| Invoices created, receipts issued on Portaldot | 2, 8 |
 | Protected payments on Portaldot, released | 6, 5 |
 | Disputes opened, resolved | 1, 1 |
 | Feedback written to Base | 11 |
 | Subjects registered in ERC-8004 | 3 |
-| Recorded transactions | 98 |
+| Recorded transactions | 103 |
 
 ## Business
 
@@ -268,7 +271,7 @@ Full list: [docs/SECURITY.md](docs/SECURITY.md).
 ## Roadmap
 
 1. Deploy the four rails directly on Portaldot.
-2. BNB in the web checkout, and a bridge-out run to BNB.
+2. A bridge-out run to BNB.
 3. Multiple attesters, a multi-signer bridge, and more source chains.
 4. Independent audit, then Portaldot mainnet.
 5. A reputation API, and licensed off-ramp partners.
