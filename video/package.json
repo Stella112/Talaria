@@ -1,0 +1,17 @@
+{
+  "name": "talaria-video",
+  "private": true,
+  "scripts": {
+    "render": "remotion render src/index.ts Talaria out/talaria-demo.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.535",
+    "@remotion/google-fonts": "^4.0.535",
+    "@types/react": "^19.2.0",
+    "puppeteer-core": "^24.10.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "remotion": "^4.0.535",
+    "typescript": "^5.8.3"
+  }
+}

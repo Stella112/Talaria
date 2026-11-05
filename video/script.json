@@ -1,0 +1,81 @@
+{
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "-4%",
+  "scenes": [
+    {
+      "id": "hook",
+      "lines": [
+        ["Crypto payments are final.", 0.35],
+        ["Pay the wrong seller, and your money is gone.", 0.45],
+        ["So people don't pay strangers.", 0.6],
+        ["This is Talaria.", 0.3],
+        ["Stripe for Portaldot, with a refund button.", 0.9]
+      ]
+    },
+    {
+      "id": "idea",
+      "lines": [
+        ["Talaria prices trust.", 0.4],
+        ["Before a payment settles on Portaldot, we read the seller's reputation from Base.", 0.45],
+        ["A proven seller gets paid instantly.", 0.3],
+        ["A new seller's payment is held for thirty minutes, so the buyer can still dispute.", 0.45],
+        ["And every outcome is written back to Base, so reputation grows from what really happened.", 0.9]
+      ]
+    },
+    {
+      "id": "story",
+      "lines": [
+        ["Here's a real run, on testnet.", 0.4],
+        ["An AI agent buys from New Shop, a seller with no history.", 0.3],
+        ["The payment is held.", 0.35],
+        ["The buyer disputes, and the arbiter refunds in full.", 0.35],
+        ["The money goes back to Base, and New Shop gets negative feedback.", 0.5],
+        ["Then the same agent buys from Trusted Coffee, with a score of one hundred.", 0.3],
+        ["It settles instantly.", 0.9]
+      ]
+    },
+    {
+      "id": "checkout",
+      "lines": [
+        ["Checkout works from other chains.", 0.4],
+        ["This wallet has zero tPOT.", 0.3],
+        ["It locked test dollars on BNB testnet, the relayer credited it on Portaldot, and the invoice was paid without gas.", 0.45],
+        ["Base works the same way.", 0.4],
+        ["And merchants can refund from the payment page, in full or in part.", 0.9]
+      ]
+    },
+    {
+      "id": "agent",
+      "lines": [
+        ["Agents get a budget, not your keys.", 0.4],
+        ["Our hosted agent has its own ERC-8004 identity, and its spending cap rises with its reputation.", 0.4],
+        ["Anyone can try it, with no wallet.", 0.35],
+        ["A signed mandate can limit it to one merchant and one amount.", 0.9]
+      ]
+    },
+    {
+      "id": "build",
+      "lines": [
+        ["Subscriptions, streams and remittance run on Base, and settle to Portaldot when you're ready.", 0.45],
+        ["It's all open source: a TypeScript SDK, an MCP server for agents, and docs.", 0.9]
+      ]
+    },
+    {
+      "id": "portaldot",
+      "lines": [
+        ["Portaldot is the settlement hub.", 0.3],
+        ["Its V3 EVM runs standard Solidity, so value and reputation from other chains meet here.", 0.45],
+        ["Every step you saw has a transaction hash in our repo.", 0.4],
+        ["It's testnet only, with one trusted relayer and arbiter for now.", 0.3],
+        ["More attesters and mainnet come next.", 0.8]
+      ]
+    },
+    {
+      "id": "end",
+      "lines": [
+        ["Talaria.", 0.3],
+        ["Payments that can come back.", 1.6]
+      ]
+    }
+  ]
+}
