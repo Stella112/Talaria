@@ -21,7 +21,7 @@ The mechanism behind it is trust-priced settlement: reputation on Base decides h
 | Base Sepolia → Portaldot checkout: lock, relayer credit, gasless invoice payment | **Live on testnet**, see [evidence](evidence/TRANSACTIONS.md) |
 | `TalariaLockboxV2` on Base Sepolia | **Live.** Locks and a bridge-out release have gone through it |
 | Trust-priced settlement: `TalariaProtect` and `TalariaBridgeOut`, mandates, holds, dispute, refund, bridge-out, feedback to Base | **Live on testnet, end to end**, see [evidence](evidence/TRANSACTIONS.md) |
-| Subscriptions, streams, pay-per-call, remittance | **Live on Base Sepolia, not on Portaldot.** They run on a second copy of Core, and proceeds settle to Portaldot through the bridge as a separate step |
+| Subscriptions, streams, pay-per-call, remittance | **Live on Base Sepolia, not on Portaldot.** They run on a second copy of Core. Streams, subscriptions and remittance can be used from the website, and a user can settle their balance to Portaldot through the bridge as a separate step. Each step on Base needs Base test ETH. Pay-per-call runs through the SDK and scripts |
 | Webhooks, idempotency | Built and tested with stubs. Not run against a real merchant |
 | Hosted agent, relayer | **Running on a VPS.** The relayer's tPOT is limited, so gasless actions pause at a set floor |
 | MCP server, x402 v2 headers | Built and tested locally |

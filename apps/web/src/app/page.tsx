@@ -275,7 +275,7 @@ export default function Overview() {
       <section className="mx-auto max-w-6xl px-4 pt-16 md:px-6 md:pt-20">
         <Pill>Multi-chain rails</Pill>
         <h2 className="mt-4 max-w-2xl text-4xl font-semibold md:text-5xl">Run anywhere, settle on Portaldot</h2>
-        <p className="mt-3 max-w-2xl text-[var(--muted)]">These rails run on Base Sepolia with real transactions. Merchants settle their proceeds to Portaldot through the bridge, as a separate step, with one trusted relayer.</p>
+        <p className="mt-3 max-w-2xl text-[var(--muted)]">These rails run on Base Sepolia, and you can use them in the app. Settle your balance to Portaldot whenever you want, through one trusted relayer. Each step on Base needs a little Base test ETH.</p>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {BASE_RAILS.map((rail) => (
             <div key={rail.name} className="flex flex-col rounded-3xl bg-[var(--surface)] p-6 md:p-7">

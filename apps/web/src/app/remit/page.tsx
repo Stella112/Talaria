@@ -1,15 +1,21 @@
 "use client";
 
+import { TalariaRemitAbi, toUnits } from "@talaria-pay/sdk";
 import { useEffect, useState } from "react";
-import type { Address, Hex } from "viem";
+import { encodeAbiParameters, keccak256, parseSignature, type Address, type Hex } from "viem";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { baseSepolia } from "viem/chains";
 import { useConnection } from "wagmi";
-import { ActionButton, Card, Field, NeedsWallet, Notice } from "@/components/ui";
-import { reader, signer } from "@/lib/talaria";
+import { BaseAccount } from "@/components/base-account";
+import { ActionButton, Card, Field, NeedsWallet } from "@/components/ui";
+import { BASE, baseTx, eventId } from "@/lib/base-rails";
+
+const THIRTY_DAYS = 30 * 24 * 3600;
 
 export default function Remit() {
   const { address } = useConnection();
   const [to, setTo] = useState("");
-  const [amount, setAmount] = useState("5");
+  const [amount, setAmount] = useState("1");
   const [claimLink, setClaimLink] = useState<string>();
   const [remitId, setRemitId] = useState("");
   const [code, setCode] = useState("");
@@ -21,22 +27,24 @@ export default function Remit() {
     if (hash.get("code")) setCode(hash.get("code")!);
   }, []);
 
-  if (!reader.addresses.remit) {
-    return <Notice>This remittance contract runs on Base Sepolia, with real transactions in the evidence log. It is not on Portaldot yet, so this page cannot use it from here.</Notice>;
-  }
-
   return (
     <NeedsWallet>
+      <BaseAccount />
       <Card title="Send" note="Leave the receiver empty to create a claim link. You can cancel until it is claimed, and it refunds after 30 days.">
         <Field label="Receiver (optional)" value={to} onChange={(e) => setTo(e.target.value)} />
-        <Field label="Amount (tUSD)" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+        <Field label="Amount (mUSDC)" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
         <ActionButton
           label={to ? "Send" : "Create claim link"}
+          chain="base"
           run={async () => {
-            const result = await (await signer()).sendRemit({ to: to ? (to as Address) : undefined, amount });
-            setRemitId(result.remitId.toString());
-            setClaimLink(result.claimCode ? `${window.location.origin}/remit#id=${result.remitId}&code=${result.claimCode}` : undefined);
-            return result.txHash;
+            const secret = to ? undefined : generatePrivateKey();
+            const target = (to || privateKeyToAccount(secret!).address) as Address;
+            const expiry = Math.floor(Date.now() / 1000) + THIRTY_DAYS;
+            const { hash, receipt } = await baseTx(BASE.remit, TalariaRemitAbi, "sendRemit", [target, !to, toUnits(amount), true, expiry]);
+            const id = eventId(receipt, TalariaRemitAbi, "RemitSent");
+            setRemitId(id.toString());
+            setClaimLink(secret ? `${window.location.origin}/remit#id=${id}&code=${secret}` : undefined);
+            return hash;
           }}
         />
         {claimLink && (
@@ -46,18 +54,23 @@ export default function Remit() {
           </div>
         )}
       </Card>
-      <Card title="Claim or cancel">
+      <Card title="Claim or cancel" note="Claimed money lands in your Talaria account on Base. Settle it to Portaldot from the card above.">
         <Field label="Remit number" inputMode="numeric" value={remitId} onChange={(e) => setRemitId(e.target.value)} />
         <Field label="Claim code (from a link)" value={code} onChange={(e) => setCode(e.target.value)} />
         <ActionButton
           label="Claim"
+          chain="base"
           disabled={!remitId}
           run={async () => {
-            const sdk = await signer();
-            return code ? sdk.claimWithCode(BigInt(remitId), code as Hex, address!) : sdk.claimRemit(BigInt(remitId));
+            const id = BigInt(remitId);
+            if (!code) return (await baseTx(BASE.remit, TalariaRemitAbi, "claimRemit", [id])).hash;
+            // The code signs this receiver, so a claim cannot be redirected.
+            const message = keccak256(encodeAbiParameters([{ type: "uint256" }, { type: "address" }, { type: "uint256" }, { type: "address" }], [BigInt(baseSepolia.id), BASE.remit, id, address!]));
+            const { r, s, v } = parseSignature(await privateKeyToAccount(code as Hex).sign({ hash: message }));
+            return (await baseTx(BASE.remit, TalariaRemitAbi, "claimWithCode", [id, address!, Number(v), r, s])).hash;
           }}
         />
-        <ActionButton secondary label="Cancel (sender)" disabled={!remitId} run={async () => (await signer()).cancelRemit(BigInt(remitId))} />
+        <ActionButton secondary chain="base" label="Cancel (sender)" disabled={!remitId} run={async () => (await baseTx(BASE.remit, TalariaRemitAbi, "cancelRemit", [BigInt(remitId)])).hash} />
       </Card>
     </NeedsWallet>
   );

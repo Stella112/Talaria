@@ -255,7 +255,7 @@ export function ActionButton({
   run: () => Promise<unknown>;
   disabled?: boolean;
   secondary?: boolean;
-  chain?: "portaldot" | "base";
+  chain?: "portaldot" | "base" | "bnb";
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();

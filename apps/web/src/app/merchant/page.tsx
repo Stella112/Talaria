@@ -1,5 +1,7 @@
 "use client";
 
+import { TalariaSubscriptionsAbi, toUnits } from "@talaria-pay/sdk";
+import { BASE, baseTx, eventId } from "@/lib/base-rails";
 import { TalariaCoreAbi } from "@talaria-pay/sdk";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -19,6 +21,7 @@ export default function Merchant() {
   const [memo, setMemo] = useState("Test order");
   const [refundAmount, setRefund] = useState("1");
   const [planAmount, setPlanAmount] = useState("5");
+  const [planCreated, setPlanCreated] = useState<string>();
   const [created, setCreated] = useState<bigint>();
   const [hookUrl, setHookUrl] = useState("");
   const [secret, setSecret] = useState<string>();
@@ -133,19 +136,19 @@ export default function Merchant() {
           <Empty>{deliveries.error ? "The relayer is not reachable, so the delivery log is unavailable." : "No deliveries yet."}</Empty>
         )}
       </Card>
-      <Card title="Subscription plans" note="Creating a plan is a direct transaction, so this wallet pays gas.">
-        {reader.addresses.subscriptions ? (
-          <>
-            <Field label="Amount per period (tUSD)" inputMode="decimal" value={planAmount} onChange={(e) => setPlanAmount(e.target.value)} />
-            <ActionButton
-              secondary
-              label="Create monthly plan (12 periods)"
-              run={async () => (await (await signer()).createPlan({ amount: planAmount, interval: 30 * 24 * 3600, maxPeriods: 12 })).txHash}
-            />
-          </>
-        ) : (
-          <Notice>The subscriptions contract is not deployed on this network yet.</Notice>
-        )}
+      <Card title="Subscription plans" note="Plans run on Base Sepolia. Creating one is a direct transaction, so this wallet needs Base test ETH.">
+        <Field label="Amount per period (mUSDC)" inputMode="decimal" value={planAmount} onChange={(e) => setPlanAmount(e.target.value)} />
+        <ActionButton
+          secondary
+          chain="base"
+          label="Create monthly plan (12 periods)"
+          run={async () => {
+            const { hash, receipt } = await baseTx(BASE.subscriptions, TalariaSubscriptionsAbi, "createPlan", [Number(toUnits(planAmount)), 30 * 24 * 3600, 12]);
+            setPlanCreated(eventId(receipt, TalariaSubscriptionsAbi, "PlanCreated").toString());
+            return hash;
+          }}
+        />
+        {planCreated && <p className="text-sm">Plan number {planCreated}. Share it, and subscribers can use it on the Streams page.</p>}
       </Card>
     </NeedsWallet>
   );
