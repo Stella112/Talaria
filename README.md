@@ -194,7 +194,7 @@ From `pnpm stats` and the relayer's records, on 2026-11-05. These are our own te
 | Disputes opened, resolved | 1, 1 |
 | Feedback written to Base | 11 |
 | Subjects registered in ERC-8004 | 3 |
-| Recorded transactions | 105 |
+| Recorded transactions | 106 |
 
 ## Business
 

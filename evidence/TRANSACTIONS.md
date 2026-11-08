@@ -105,3 +105,4 @@
 | checkout | invoice 2 paid gaslessly from the website, by a wallet with 0 tPOT. Same wallet as the merchant, for testing | `0xc76af054c9140dd44abda6d7198a61a5d7895d57b8c9375cf97dbf2964b014f7` | 337884 | success | credit and payment cost the relayer 11.60 tPOT together |
 | setup (Base Sepolia) | send 0.005 ETH to tester 0xE66581C8f5B91d257b5EAa90168B547Ba28f8e19 | `0x0965dcb67bc9306b1d217564fdd8ecf6a5c1514c2892e56e57606f94d93130e6` | 54915130 | success | test ETH |
 | protect | merchant refund 0.5 tUSD on payment 6, Trusted Coffee | `0x803bc8da03c8ad4d0ae2fa156c418f644ccb9c2c5ea2fcf6c4120b44f72f040f` | 338685 | success | tPOT, paid by the VPS relayer |
+| setup | fund the VPS relayer with 18 tPOT from the deployer | `0xb45627b1160281a4aa38ccdf23a52cd0a0ec2ee56508a274f8dc9ea3f4641ddc` | 382612 | success | tPOT |
